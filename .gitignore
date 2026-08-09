@@ -1,0 +1,43 @@
+# OS/local residue
+.DS_Store
+Thumbs.db
+nul
+
+# Flutter/Dart generated files
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+**/build/
+**/coverage/
+
+# Android/iOS generated files
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/ephemeral/
+
+# IDE/editor files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# External/local agent tooling
+huerta_viva_app/ui-ux-pro-max-skill/
+huerta_viva_app/.agents/
+huerta_viva_app/.claude/
+
+# Firebase/project secrets
+**/google-services.json
+**/GoogleService-Info.plist
+*.env
+*.env.*
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp

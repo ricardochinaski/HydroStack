@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<!-- saved from url=(0061)file:///C:/Users/ricar/Downloads/electronica_esp32_guide.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Electrónica — HuertaApp</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --eco: #16A34A;
+    --eco-bg: #DCFCE7;
+    --pro: #7C3AED;
+    --pro-bg: #EDE9FE;
+    --naranja: #EA580C;
+    --tierra: #1C1917;
+    --arena: #FAFAF9;
+    --gris: #6B7280;
+    --borde: #E5E7EB;
+    --blanco: #FFFFFF;
+    --rojo: #DC2626;
+    --azul: #2563EB;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Space Grotesk', sans-serif; background: var(--arena); color: var(--tierra); }
+
+  /* HEADER */
+  header {
+    background: var(--tierra);
+    padding: 16px 20px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-inner { display: flex; align-items: center; gap: 10px; }
+  header h1 { font-size: 16px; color: white; font-weight: 700; }
+  header p { font-size: 10px; font-family: 'Space Mono', monospace; color: #A8A29E; margin-top: 2px; }
+
+  /* VERSION TOGGLE */
+  .version-toggle {
+    display: flex;
+    margin: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--borde);
+    background: white;
+  }
+  .version-btn {
+    flex: 1;
+    padding: 14px 10px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .version-btn .v-label { font-size: 10px; font-family: 'Space Mono', monospace; opacity: 0.6; }
+  .version-btn.eco.active { background: var(--eco); color: white; }
+  .version-btn.pro.active { background: var(--pro); color: white; }
+  .version-btn.eco.active .v-label, .version-btn.pro.active .v-label { opacity: 0.8; }
+
+  /* PRICE HERO */
+  .price-hero {
+    margin: 0 16px 16px;
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .price-hero.eco { background: var(--eco-bg); border: 2px solid var(--eco); }
+  .price-hero.pro { background: var(--pro-bg); border: 2px solid var(--pro); }
+  .price-hero h2 { font-size: 15px; margin-bottom: 4px; }
+  .price-hero p { font-size: 11px; color: var(--gris); line-height: 1.4; max-width: 180px; }
+  .price-big { font-size: 30px; font-family: 'Space Mono', monospace; font-weight: 700; line-height: 1; }
+  .price-sub { font-size: 10px; color: var(--gris); text-align: right; margin-top: 2px; }
+  .price-hero.eco .price-big { color: var(--eco); }
+  .price-hero.pro .price-big { color: var(--pro); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: #F3F4F6;
+    border-bottom: 2px solid var(--borde);
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 11px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    color: var(--gris);
+    transition: all 0.2s;
+  }
+  .tab.active { color: var(--tierra); border-bottom-color: var(--tierra); background: var(--arena); font-weight: 600; }
+
+  .content { display: none; padding: 16px 16px 40px; }
+  .content.active { display: block; }
+
+  /* SECTION LABEL */
+  .sec { font-size: 10px; font-family: 'Space Mono', monospace; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; margin-top: 18px; padding-bottom: 5px; border-bottom: 2px solid var(--borde); color: var(--gris); }
+  .sec:first-child { margin-top: 0; }
+
+  /* COMPONENT CARDS */
+  .comp-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
+  .comp-card {
+    background: white;
+    border-radius: 12px;
+    padding: 13px 14px;
+    border: 1px solid var(--borde);
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .comp-card.eco-only { border-left: 3px solid var(--eco); }
+  .comp-card.pro-only { border-left: 3px solid var(--pro); }
+  .comp-card.both { border-left: 3px solid var(--naranja); }
+  .comp-icon { font-size: 26px; flex-shrink: 0; width: 36px; text-align: center; }
+  .comp-body { flex: 1; }
+  .comp-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .comp-model { font-size: 10px; font-family: 'Space Mono', monospace; color: var(--pro); margin-bottom: 4px; }
+  .comp-desc { font-size: 11px; color: var(--gris); line-height: 1.4; margin-bottom: 6px; }
+  .comp-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+  .tag {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+  }
+  .tag-price { background: #FEF3C7; color: #92400E; }
+  .tag-eco { background: var(--eco-bg); color: var(--eco); }
+  .tag-pro { background: var(--pro-bg); color: var(--pro); }
+  .tag-pin { background: #DBEAFE; color: var(--azul); }
+  .tag-warn { background: #FEE2E2; color: var(--rojo); }
+  .tag-tip { background: #F0FDF4; color: var(--eco); }
+
+  /* TOTAL BOX */
+  .total-box {
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin: 16px 0 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .total-box.eco { background: var(--eco); }
+  .total-box.pro { background: var(--pro); }
+  .total-box span { color: rgba(255,255,255,0.8); font-size: 12px; }
+  .total-box strong { font-family: 'Space Mono', monospace; font-size: 22px; color: white; }
+
+  /* WIRING DIAGRAM */
+  .wiring-block {
+    background: #0F172A;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    line-height: 2;
+    overflow-x: auto;
+  }
+  .w-esp { color: #38BDF8; }
+  .w-sensor { color: #86EFAC; }
+  .w-power { color: #FCD34D; }
+  .w-gnd { color: #F87171; }
+  .w-arrow { color: #94A3B8; }
+  .w-comment { color: #475569; }
+
+  /* WIRING STEP */
+  .wire-step {
+    background: white;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    border-left: 4px solid;
+  }
+  .wire-step.pwr { border-left-color: #F59E0B; }
+  .wire-step.signal { border-left-color: var(--azul); }
+  .wire-step.relay { border-left-color: var(--rojo); }
+  .wire-step.sensor { border-left-color: var(--eco); }
+  .wire-step h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .wire-step p { font-size: 11px; color: var(--gris); line-height: 1.5; }
+  .wire-step .warn { font-size: 11px; color: var(--rojo); margin-top: 6px; font-weight: 600; }
+
+  /* 3D SECTION */
+  .print-card {
+    background: white;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+    border: 1px solid var(--borde);
+  }
+  .print-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .print-name { font-size: 14px; font-weight: 700; }
+  .print-version { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700; }
+  .print-version.eco { background: var(--eco-bg); color: var(--eco); }
+  .print-version.pro { background: var(--pro-bg); color: var(--pro); }
+  .print-version.both { background: #FEF3C7; color: #92400E; }
+  .print-desc { font-size: 11px; color: var(--gris); line-height: 1.5; margin-bottom: 8px; }
+  .print-specs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .print-spec { font-size: 10px; background: var(--arena); padding: 5px 8px; border-radius: 6px; }
+  .print-spec span { display: block; color: var(--gris); font-size: 9px; }
+
+  /* COMPARISON */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .compare-table th {
+    padding: 10px 12px;
+    text-align: center;
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+  }
+  .compare-table th:first-child { text-align: left; }
+  .compare-table th.eco-h { background: var(--eco); color: white; }
+  .compare-table th.pro-h { background: var(--pro); color: white; }
+  .compare-table th.feat-h { background: #F3F4F6; }
+  .compare-table td { padding: 9px 12px; border-bottom: 1px solid var(--borde); }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table td:not(:first-child) { text-align: center; }
+  .check { color: var(--eco); font-size: 14px; }
+  .cross { color: #D1D5DB; font-size: 14px; }
+  .partial { color: var(--naranja); font-size: 11px; }
+
+  .note-box {
+    background: #FFF7ED;
+    border: 1px solid #FED7AA;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: #9A3412;
+    margin-top: 14px;
+    line-height: 1.6;
+  }
+  .note-box strong { display: block; margin-bottom: 4px; }
+
+  /* SVG Diagram */
+  .diagram-wrap {
+    background: #0F172A;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 6px;
+  }
+  .pill-new { background: var(--pro-bg); color: var(--pro); }
+  .pill-eco { background: var(--eco-bg); color: var(--eco); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span style="font-size:22px">⚡</span>
+    <div>
+      <h1>Electrónica del Sistema</h1>
+      <p>ESP32 · SENSORES · CABLEADO · IMPRESIÓN 3D</p>
+    </div>
+  </div>
+</header>
+
+<!-- VERSION TOGGLE -->
+<div class="version-toggle">
+  <button class="version-btn eco active" onclick="setVersion(&#39;eco&#39;, this)">
+    🌱 ECO
+    <span class="v-label">VERSIÓN BÁSICA</span>
+  </button>
+  <button class="version-btn pro" onclick="setVersion(&#39;pro&#39;, this)">
+    🚀 PRO
+    <span class="v-label">VERSIÓN AVANZADA</span>
+  </button>
+</div>
+
+<!-- PRICE HERO (ECO) -->
+<div class="price-hero eco" id="hero-eco">
+  <div>
+    <h2>Versión ECO</h2>
+    <p>Control WiFi básico. Riego automático. App móvil. Ideal para primer producto.</p>
+  </div>
+  <div>
+    <div class="price-big">$45</div>
+    <div class="price-sub">USD por torre</div>
+  </div>
+</div>
+
+<!-- PRICE HERO (PRO) -->
+<div class="price-hero pro" id="hero-pro" style="display:none">
+  <div>
+    <h2>Versión PRO</h2>
+    <p>Sensores pH + EC + pantalla táctil. Dosificación automática de nutrientes.</p>
+  </div>
+  <div>
+    <div class="price-big">$145</div>
+    <div class="price-sub">USD por torre</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="showTab(&#39;componentes&#39;)">🔩 Componentes</div>
+  <div class="tab" onclick="showTab(&#39;cableado&#39;)">🔌 Cableado</div>
+  <div class="tab" onclick="showTab(&#39;impresion3d&#39;)">🖨️ 3D Print</div>
+  <div class="tab" onclick="showTab(&#39;comparacion&#39;)">📊 Comparación</div>
+</div>
+
+<!-- ===== COMPONENTES ===== -->
+<div id="tab-componentes" class="content active">
+
+  <!-- ECO SECTION -->
+  <div id="eco-components">
+    <div class="sec">// CEREBRO</div>
+    <div class="comp-list">
+      <div class="comp-card both">
+        <div class="comp-icon">🧠</div>
+        <div class="comp-body">
+          <div class="comp-name">ESP32 WROOM-32</div>
+          <div class="comp-model">esp32-devkitC-v4 / ESP32-38PIN</div>
+          <div class="comp-desc">Microcontrolador con WiFi + Bluetooth integrado. 30 pines GPIO. Núcleo doble 240MHz. El corazón del sistema en ambas versiones.</div>
+          <div class="comp-tags">
+            <span class="tag tag-price">$6–10 USD</span>
+            <span class="tag tag-eco">ECO ✓</span>
+            <span class="tag tag-pro">PRO ✓</span>
+            <span class="tag tag-pin">GPIO: 30 pines</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">// SENSORES AMBIENTALES (ECO)</div>
+    <div class="comp-list">
+      <div class="comp-card eco-only">
+        <div class="comp-icon">🌡️</div>
+        <div class="comp-body">
+          <div class="comp-name">DHT22</div>
+          <div class="comp-model">AM2302 — Temperatura + Humedad aire</div>
+          <div class="comp-desc">Mide temperatura (±0.5°C) y humedad relativa (±2%) del ambiente. Más preciso que el DHT11. Digital, fácil de conectar con un solo cable de datos.</div>
+          <div class="comp-tags">
+            <span class="tag tag-price">$2–4 USD</span>
+            <span class="tag tag-eco">ECO ✓</span>
+            <span class="tag tag-pin">Pin: DATA → GPIO4</span>
+          </div>
+        </div>
+      </div>
+      <div class="comp-card eco-only">
+        <div class="comp-icon">💧</div>
+        <div class="comp-body">
+          <div class="comp-name">Sensor Humedad Suelo Capacitivo</div>
+          <div class="comp-model">CAPACITIVE SOIL MOISTURE v1.2</div>
+          <div class="comp-desc">Mide humedad del sustrato. Capacitivo (no se corroe como los resistivos). Ideal para detectar cuándo el sustrato está muy seco y activar riego extra.</div>
+          <div class="comp-tags">
+            <span class="tag tag-price">$1.5–3 USD</span>
+            <span class="tag tag-eco">ECO ✓</span>
+            <span class="tag tag-pin">Pin: AOUT → GPIO34</span>
+          </div>
+        </div>
+      </div>
+      <div class="comp-card eco-only">
+        <div class="comp-icon">🌊</div>
+        <div class="comp-body">
+          <div class="comp-name">DS18B20</div>
+          <div class="comp-model">Sensor temperatura agua — impermeable</div>
+          <div class="comp-desc">Mide temperatura de la solución nutritiva en el reservorio. Sumergible. Precisión ±0.5°C. Protocolo 1-Wire, comparte pin con otros DS18B20.</div>
+          <div class="comp-tags">
+            <span class="tag tag-price">$2–4 USD</span>
+            <span class="tag tag-eco">ECO ✓</span>
+            <span class="tag tag-pin">Pin: DATA → GPIO13</span>
+            <span class="tag tag-warn">R. pull-up 4.7kΩ</span>
+          </div>
+        </div>
+      </div>
+      <div class="comp-card eco-only">
+        <div class="comp-icon">📏</div>
+        <div class="comp-body">
+          <div class="comp-name">HC-SR04 Ultrasónico</div>
+          <div class="comp-model">Nivel de agua en reservorio</div>
+          <div class="comp-desc">Detecta el nivel de agua del reservorio por ultrasonido. Alerta cuando el agua baja del 20%. No requiere contacto con el agua.</div>
+          <div class="comp-tags">
+            <span class="tag tag-price">$1–2 USD</span>
+            <span class="tag tag-eco">ECO ✓</span>
+            <span class="tag tag-pin">TRIG→GPIO5 / ECHO→GPIO18</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">// CONTROL DE RIEGO</div>
+    <div class="comp-list">
+      <div class="comp-card both">
+        <div class="comp-icon">⚡</div>
+        <div class="comp-body">
+          <div class="comp-name">Relay 4 Canales 5V</div>
+          <div class="comp-model">SRD-05VDC-SL-C — con optoacoplador</div>
+          <div class="comp-desc">Controla 4 dispositivos de 220V/10A desde el ESP32. Con optoacoplador (aislamiento seguro). Canales: bomba principal, bomba nutrientes, ventilador, reserva.</div>
+          <div class="comp-tags">
+            <span class="tag tag-price">$3–6 USD</span>
+            <span class="tag tag-eco">ECO ✓</span>
+            <span class="tag tag-pro">PRO ✓</span>
+            <span class="tag tag-warn">⚠️ Fuente ext. 5V para relay</span>
+          </div>
+        </div>
+      </div>
+      <div class="comp-card both">
+        <div class="comp-icon">⏱️</div>
+        <div class="comp-body">
+          <div class="comp-name">Fuente 5V 2A</div>
+          <div class="comp-model">HLK-PM01 / Adaptador 5V USB</div>
+          <div class="comp-desc">Alimenta el ESP32 y el módulo relay. No conectar el relay directo al pin 5V del ESP32: puede quemar el microcontrolador. Fuente independiente obligatoria.</div>
+          <div class="comp-tags">
+            <span class="tag tag-price">$3–7 USD</span>
+            <span class="tag tag-eco">ECO ✓</span>
+            <span class="tag tag-pro">PRO ✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="total-box eco">
+      <span>Total Versión ECO<br><small style="opacity:0.7">Sin impresión 3D</small></span>
+      <strong>~$25–45 USD</strong>
+    </div>
+
+    <!-- PRO EXTRAS -->
+    <div id="pro-components" style="display:none">
+      <div class="sec">// SENSORES PRO (adicionales)</div>
+      <div class="comp-list">
+        <div class="comp-card pro-only">
+          <div class="comp-icon">⚗️</div>
+          <div class="comp-body">
+            <div class="comp-name">Sensor pH Analógico</div>
+            <div class="comp-model">DFRobot SEN0161-V2 / Gravity pH</div>
+            <div class="comp-desc">Sonda de pH de grado industrial para líquidos. Precisión ±0.1 pH. Compatible 3.3V–5V. Incluye soluciones de calibración pH4 y pH7. Calibrar cada 3–4 semanas.</div>
+            <div class="comp-tags">
+              <span class="tag tag-price">$20–35 USD</span>
+              <span class="tag tag-pro">PRO ✓</span>
+              <span class="tag tag-pin">Pin: AOUT → GPIO35</span>
+              <span class="tag tag-warn">Calibrar con buffer</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card pro-only">
+          <div class="comp-icon">🔬</div>
+          <div class="comp-body">
+            <div class="comp-name">Sensor EC / TDS</div>
+            <div class="comp-model">DFRobot SEN0244 — Conductividad</div>
+            <div class="comp-desc">Mide la concentración de nutrientes (EC en mS/cm). Detecta si la solución está muy diluida o concentrada. Esencial para alertas de nutrientes en la app.</div>
+            <div class="comp-tags">
+              <span class="tag tag-price">$15–25 USD</span>
+              <span class="tag tag-pro">PRO ✓</span>
+              <span class="tag tag-pin">Pin: AOUT → GPIO32</span>
+              <span class="tag tag-warn">Verificar c/4–6 semanas</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card pro-only">
+          <div class="comp-icon">📺</div>
+          <div class="comp-body">
+            <div class="comp-name">Pantalla TFT 2.8" táctil</div>
+            <div class="comp-model">ILI9341 — 240×320 SPI + Touch</div>
+            <div class="comp-desc">Pantalla a color con touch resistivo. Muestra pH, EC, temperatura y estado de bomba en tiempo real. Sin necesidad de teléfono para ver datos básicos.</div>
+            <div class="comp-tags">
+              <span class="tag tag-price">$8–15 USD</span>
+              <span class="tag tag-pro">PRO ✓</span>
+              <span class="tag tag-pin">SPI: MOSI/MISO/CLK/CS/DC</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card pro-only">
+          <div class="comp-icon">💊</div>
+          <div class="comp-body">
+            <div class="comp-name">Bombas Peristálticas × 2</div>
+            <div class="comp-model">12V DC Peristaltic Pump — 50mL/min</div>
+            <div class="comp-desc">Dosifican automáticamente nutrientes A y B al reservorio. La app calcula la dosis según tipo de planta y EC medida. Diferenciador principal de la versión PRO.</div>
+            <div class="comp-tags">
+              <span class="tag tag-price">$8–14 USD c/u</span>
+              <span class="tag tag-pro">PRO ✓</span>
+              <span class="tag tag-warn">Relay adicional por bomba</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card pro-only">
+          <div class="comp-icon">📡</div>
+          <div class="comp-body">
+            <div class="comp-name">BME280</div>
+            <div class="comp-model">Temp + Humedad + Presión atmosférica</div>
+            <div class="comp-desc">Reemplaza el DHT22 en versión PRO. Más preciso, comunicación I2C, mide también presión barométrica para estaciones meteorológicas futuras.</div>
+            <div class="comp-tags">
+              <span class="tag tag-price">$3–6 USD</span>
+              <span class="tag tag-pro">PRO ✓</span>
+              <span class="tag tag-pin">I2C: SDA→GPIO21 / SCL→GPIO22</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card pro-only">
+          <div class="comp-icon">🔋</div>
+          <div class="comp-body">
+            <div class="comp-name">Módulo Relay 8 canales</div>
+            <div class="comp-model">8CH 5V Optocoupler Relay Board</div>
+            <div class="comp-desc">Versión PRO necesita más canales: bomba agua, bomba nutriente A, bomba nutriente B, ventilador, luz UV (opcional), reserva ×3.</div>
+            <div class="comp-tags">
+              <span class="tag tag-price">$6–10 USD</span>
+              <span class="tag tag-pro">PRO ✓</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="total-box pro">
+        <span>Total Versión PRO<br><small style="opacity:0.7">Sin impresión 3D</small></span>
+        <strong>~$85–145 USD</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CABLEADO ===== -->
+<div id="tab-cableado" class="content">
+
+  <!-- DIAGRAMA ASCII -->
+  <div class="sec">// DIAGRAMA DE CONEXIONES — ECO</div>
+  <div class="wiring-block">
+<span class="w-comment">                    ┌─────────────────────┐</span>
+<span class="w-comment">                    │     ESP32 WROOM     │</span>
+<span class="w-comment">                    │  (cerebro central)  │</span>
+<span class="w-comment">                    └────────┬────────────┘</span>
+<span class="w-comment">          ┌─────────┬────────┴────────┬───────────┐</span>
+          │         │                 │           │
+<span class="w-sensor">    DHT22</span>    <span class="w-sensor">DS18B20</span>      <span class="w-sensor">HC-SR04</span>     <span class="w-sensor">SOIL</span>
+<span class="w-comment">   T+H aire</span>   <span class="w-comment">T agua</span>       <span class="w-comment">Nivel agua</span>   <span class="w-comment">Humedad</span>
+<span class="w-comment">    GPIO4</span>     <span class="w-comment">GPIO13</span>       <span class="w-comment">GPIO5/18</span>    <span class="w-comment">GPIO34</span>
+
+<span class="w-comment">                         │</span>
+                    <span class="w-esp">RELAY 4CH</span>
+<span class="w-comment">               ┌────┬────┬────┐</span>
+<span class="w-comment">               │    │    │    │</span>
+            <span class="w-power">BOMBA</span>  <span class="w-sensor">VENT</span>  <span class="w-sensor">LUZ</span>  <span class="w-comment">RES</span>
+<span class="w-comment">            220V   5V   12V   ---</span>
+
+<span class="w-power">5V EXT ──── RELAY VCC</span>
+<span class="w-gnd">GND ─────── RELAY GND / DHT22 GND / DS18B20 GND</span>
+<span class="w-power">3.3V ────── DHT22 VCC / DS18B20 VCC / SOIL VCC</span>
+  </div>
+
+  <div class="sec">// PASOS DE CABLEADO SEGUROS</div>
+
+  <div class="wire-step pwr">
+    <h4>① Alimentación — SIEMPRE primero</h4>
+    <p>Conecta la fuente 5V externa al relay (VCC y GND). El ESP32 va por USB o fuente propia 3.3V. <strong>NUNCA</strong> alimentes el relay desde el pin 5V del ESP32.</p>
+    <p class="warn">⚠️ El relay consume hasta 360mA por canal. El pin 5V del ESP32 sólo da 500mA total.</p>
+  </div>
+
+  <div class="wire-step signal">
+    <h4>② DHT22 — Temperatura y Humedad Ambiente</h4>
+    <p><strong>VCC</strong> → 3.3V del ESP32<br>
+    <strong>GND</strong> → GND del ESP32<br>
+    <strong>DATA</strong> → GPIO4<br>
+    Resistencia pull-up de <strong>10kΩ</strong> entre DATA y VCC. Ya viene integrada en muchos módulos breakout.</p>
+  </div>
+
+  <div class="wire-step sensor">
+    <h4>③ DS18B20 — Temperatura Agua (sumergible)</h4>
+    <p><strong>Cable rojo</strong> (VCC) → 3.3V<br>
+    <strong>Cable negro</strong> (GND) → GND<br>
+    <strong>Cable amarillo</strong> (DATA) → GPIO13<br>
+    Resistencia pull-up de <strong>4.7kΩ</strong> entre DATA y VCC. Obligatoria, sin ella no funciona.</p>
+  </div>
+
+  <div class="wire-step sensor">
+    <h4>④ HC-SR04 — Nivel de agua</h4>
+    <p><strong>VCC</strong> → 5V externo (trabaja a 5V, no 3.3V)<br>
+    <strong>GND</strong> → GND<br>
+    <strong>TRIG</strong> → GPIO5<br>
+    <strong>ECHO</strong> → GPIO18 (con divisor de voltaje 1kΩ + 2kΩ para bajar 5V → 3.3V)</p>
+  </div>
+
+  <div class="wire-step relay">
+    <h4>⑤ Módulo Relay — Control Bomba</h4>
+    <p><strong>VCC</strong> → 5V externo<br>
+    <strong>GND</strong> → GND compartido<br>
+    <strong>IN1</strong> → GPIO26 (bomba principal)<br>
+    <strong>IN2</strong> → GPIO27 (ventilador)<br>
+    <strong>IN3</strong> → GPIO14 (luz UV, opcional)<br>
+    La bomba 220V se conecta a COM y NO (Normally Open) del relay 1.</p>
+    <p class="warn">⚠️ 220V es peligroso. Usa cable bien aislado y caja cerrada para los terminales de alta tensión.</p>
+  </div>
+
+  <div class="wire-step sensor">
+    <h4>⑥ Sensor Humedad Suelo (Capacitivo)</h4>
+    <p><strong>VCC</strong> → 3.3V<br>
+    <strong>GND</strong> → GND<br>
+    <strong>AOUT</strong> → GPIO34 (pin ADC solo de entrada)<br>
+    Calibrar: 100% húmedo (~1000) y completamente seco (~3000) para mapear porcentaje.</p>
+  </div>
+
+  <div id="pro-wiring" style="display:none">
+    <div class="sec">// CONEXIONES ADICIONALES PRO</div>
+
+    <div class="wire-step sensor">
+      <h4>⑦ Sensor pH — Gravity SEN0161</h4>
+      <p><strong>VCC</strong> → 5V externo (o 3.3V si tienes V2)<br>
+      <strong>GND</strong> → GND<br>
+      <strong>AOUT</strong> → GPIO35 (ADC pin)<br>
+      Calibrar con buffer pH4 y pH7. Enjuagar sonda con agua destilada entre mediciones.</p>
+      <p class="warn">⚠️ La sonda de pH dura ~1–2 años. Mantener en solución KCl cuando no se usa.</p>
+    </div>
+
+    <div class="wire-step sensor">
+      <h4>⑧ Sensor EC — SEN0244</h4>
+      <p><strong>VCC</strong> → 5V<br>
+      <strong>GND</strong> → GND<br>
+      <strong>AOUT</strong> → GPIO32<br>
+      No instalar cerca del sensor pH para evitar interferencias electromagnéticas.</p>
+    </div>
+
+    <div class="wire-step signal">
+      <h4>⑨ Pantalla TFT 2.8" ILI9341</h4>
+      <p><strong>VCC</strong> → 3.3V<br>
+      <strong>GND</strong> → GND<br>
+      <strong>CS</strong> → GPIO15 | <strong>RESET</strong> → GPIO4 | <strong>DC</strong> → GPIO2<br>
+      <strong>MOSI</strong> → GPIO23 | <strong>CLK</strong> → GPIO18 | <strong>LED</strong> → 3.3V<br>
+      Librería: TFT_eSPI (configurar pins en User_Setup.h)</p>
+    </div>
+
+    <div class="wire-step relay">
+      <h4>⑩ Bombas Peristálticas × 2</h4>
+      <p>Bomba 12V DC. Conectar a fuente 12V independiente.<br>
+      Control por relay: <strong>IN5</strong> → GPIO25 (nutriente A)<br>
+      <strong>IN6</strong> → GPIO33 (nutriente B)<br>
+      Ciclo: 5 segundos de bomba = ~4mL de nutriente. Calibrar por volumen real.</p>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>💡 Reglas de oro para el cableado</strong>
+    1. <strong>GND común</strong> para todo: ESP32, relay, sensores y fuente externa deben compartir el mismo negativo.<br>
+    2. <strong>Color de cables</strong>: Rojo = VCC, Negro = GND, Verde = señal/datos, Amarillo = ADC.<br>
+    3. <strong>Nunca tocar 220V</strong> con el circuito encendido. Desconectar antes de cualquier cambio.<br>
+    4. <strong>Prueba sin 220V</strong> primero: verifica que los relays "hacen clic" antes de conectar la bomba real.
+  </div>
+</div>
+
+<!-- ===== IMPRESIÓN 3D ===== -->
+<div id="tab-impresion3d" class="content">
+
+  <div class="sec">// PIEZAS A IMPRIMIR EN 3D</div>
+
+  <div class="print-card">
+    <div class="print-card-top">
+      <div class="print-name">🏠 Caja de Control Principal</div>
+      <span class="print-version both">ECO + PRO</span>
+    </div>
+    <div class="print-desc">Carcasa que aloja el ESP32, el módulo relay y la fuente de alimentación. Diseño con ventilación pasiva y pasacables. Se monta en el reservorio o en la pared junto a la torre.</div>
+    <div class="print-specs">
+      <div class="print-spec">Tamaño aprox.<span>120×80×40mm</span></div>
+      <div class="print-spec">Material<span>PETG (resistente humedad)</span></div>
+      <div class="print-spec">Relleno<span>20-30%</span></div>
+      <div class="print-spec">Tiempo impresión<span>4–6 horas</span></div>
+      <div class="print-spec">Soporte<span>No necesario</span></div>
+      <div class="print-spec">Costo aprox.<span>$2–4 USD filamento</span></div>
+    </div>
+  </div>
+
+  <div class="print-card">
+    <div class="print-card-top">
+      <div class="print-name">🔌 Soporte Sensor pH / EC</div>
+      <span class="print-version pro">PRO</span>
+    </div>
+    <div class="print-desc">Bracket que mantiene las sondas de pH y EC sumergidas a la misma profundidad y separadas entre sí (para evitar interferencias). Se ajusta al borde del reservorio con clips sin tornillos.</div>
+    <div class="print-specs">
+      <div class="print-spec">Tamaño aprox.<span>80×30×60mm</span></div>
+      <div class="print-spec">Material<span>PETG o ABS (resistente agua)</span></div>
+      <div class="print-spec">Relleno<span>40%</span></div>
+      <div class="print-spec">Tiempo<span>1.5–2 horas</span></div>
+      <div class="print-spec">Soporte<span>Mínimo</span></div>
+      <div class="print-spec">Costo<span>$0.50–1 USD</span></div>
+    </div>
+  </div>
+
+  <div class="print-card">
+    <div class="print-card-top">
+      <div class="print-name">📺 Marco Pantalla TFT 2.8"</div>
+      <span class="print-version pro">PRO</span>
+    </div>
+    <div class="print-desc">Panel frontal con abertura para la pantalla y botones físicos (reset, calibración). Da un aspecto de producto profesional terminado. Logo del proyecto en relieve en la tapa.</div>
+    <div class="print-specs">
+      <div class="print-spec">Tamaño<span>95×70×15mm</span></div>
+      <div class="print-spec">Material<span>PLA o PETG blanco/negro</span></div>
+      <div class="print-spec">Relleno<span>15-20%</span></div>
+      <div class="print-spec">Tiempo<span>2–3 horas</span></div>
+      <div class="print-spec">Acabado<span>Lija 200→400 + pintura spray</span></div>
+      <div class="print-spec">Costo<span>$1–2 USD</span></div>
+    </div>
+  </div>
+
+  <div class="print-card">
+    <div class="print-card-top">
+      <div class="print-name">💧 Soporte Sensor DS18B20</div>
+      <span class="print-version both">ECO + PRO</span>
+    </div>
+    <div class="print-desc">Pequeño clip que fija el sensor de temperatura de agua en el fondo del reservorio. Evita que flote o se desplace. Diseño simple: 30 minutos de impresión.</div>
+    <div class="print-specs">
+      <div class="print-spec">Material<span>PETG (resistente agua)</span></div>
+      <div class="print-spec">Tiempo<span>20–30 min</span></div>
+      <div class="print-spec">Soporte<span>No</span></div>
+      <div class="print-spec">Costo<span>~$0.20 USD</span></div>
+    </div>
+  </div>
+
+  <div class="print-card">
+    <div class="print-card-top">
+      <div class="print-name">🌿 Canastilla de Planta Personalizada</div>
+      <span class="print-version both">ECO + PRO</span>
+    </div>
+    <div class="print-desc">Las canastillas genéricas se pueden reemplazar por canastillas con logo propio en relieve. Diferenciador visual fuerte. Diámetro exterior 55mm para encajar en huecos del tubo PVC.</div>
+    <div class="print-specs">
+      <div class="print-spec">Diámetro ext.<span>55mm (ajustable)</span></div>
+      <div class="print-spec">Material<span>PETG alimentario blanco</span></div>
+      <div class="print-spec">Relleno<span>10% (estructura de red)</span></div>
+      <div class="print-spec">Tiempo<span>15–20 min c/u</span></div>
+      <div class="print-spec">Costo c/u<span>~$0.15 USD</span></div>
+      <div class="print-spec">×24 torre<span>~$3.50 USD</span></div>
+    </div>
+  </div>
+
+  <div class="print-card">
+    <div class="print-card-top">
+      <div class="print-name">🔝 Tapón Superior con Logo</div>
+      <span class="print-version both">ECO + PRO</span>
+    </div>
+    <div class="print-desc">El tapón de la cima de la torre impreso en 3D en lugar del PVC genérico. Logo de tu marca en relieve, agujero central calibrado para la manguera. Primera impresión del producto.</div>
+    <div class="print-specs">
+      <div class="print-spec">Diámetro<span>115mm (tubo 4")</span></div>
+      <div class="print-spec">Material<span>PETG blanco o verde</span></div>
+      <div class="print-spec">Tiempo<span>1–1.5 horas</span></div>
+      <div class="print-spec">Costo<span>$0.80–1.5 USD</span></div>
+    </div>
+  </div>
+
+  <div class="sec" style="margin-top:20px">// DÓNDE CONSEGUIR IMPRESORA O IMPRIMIR</div>
+
+  <div class="comp-card both">
+    <div class="comp-icon">🏪</div>
+    <div class="comp-body">
+      <div class="comp-name">Opción 1 — Servicio de impresión local</div>
+      <div class="comp-desc">Busca en Instagram o Facebook "impresión 3D [tu ciudad]". Costo por gramo: $0.05–0.15 USD. Para el prototipo es más rentable que comprar impresora. Pide cotización con los archivos STL.</div>
+      <div class="comp-tags"><span class="tag tag-eco">Más económico</span><span class="tag tag-tip">Ideal para prototipo</span></div>
+    </div>
+  </div>
+
+  <div class="comp-card pro-only">
+    <div class="comp-icon">🖨️</div>
+    <div class="comp-body">
+      <div class="comp-name">Opción 2 — Impresora propia</div>
+      <div class="comp-model">Bambu Lab A1 Mini / Ender 3 V3</div>
+      <div class="comp-desc">Si vendes más de 10 torres/mes, la inversión en impresora se amortiza. Bambu Lab A1 Mini (~$300 USD) es la mejor relación calidad/velocidad para este tipo de piezas funcionales.</div>
+      <div class="comp-tags"><span class="tag tag-price">$200–350 USD impresora</span><span class="tag tag-pro">Escala de negocio</span></div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>🎨 Consejo de diseño 3D para diferenciarte</strong>
+    Empieza con Fusion 360 (gratis para startups) o Tinkercad (más fácil, online gratis).<br>
+    Añadir tu logo en relieve a las piezas tarda solo 10 minutos extra de diseño y cambia completamente la percepción del producto. Un cliente que ve "HuertaApp" grabado en la canastilla entiende que no es un kit genérico de AliExpress.
+  </div>
+</div>
+
+<!-- ===== COMPARACIÓN ===== -->
+<div id="tab-comparacion" class="content">
+
+  <div class="sec">// ECO vs PRO</div>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th class="feat-h">Característica</th>
+        <th class="eco-h">🌱 ECO</th>
+        <th class="pro-h">🚀 PRO</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>ESP32 WiFi + BT</strong></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Control bomba riego</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Temp. + Humedad ambiente</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Temperatura agua</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Nivel de agua</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Humedad sustrato</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>App móvil control</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Alertas push</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Medición pH agua</td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Medición EC nutrientes</td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Pantalla táctil local</td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Dosif. automático nutrientes</td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Perfiles por tipo planta</td><td><span class="partial">Manual</span></td><td><span class="check">✓ Auto</span></td></tr>
+      <tr><td>Historial datos (app)</td><td><span class="check">7 días</span></td><td><span class="check">90 días</span></td></tr>
+      <tr><td>Piezas 3D básicas</td><td><span class="check">Caja + clips</span></td><td><span class="check">✓</span></td></tr>
+      <tr><td>Piezas 3D premium</td><td><span class="cross">—</span></td><td><span class="check">Pantalla + sondas</span></td></tr>
+      <tr><td>Canastillas con logo</td><td><span class="partial">Opcional</span></td><td><span class="check">Incluido</span></td></tr>
+      <tr><td><strong>Costo electrónica</strong></td><td><span style="color:var(--eco);font-weight:700">$25–45</span></td><td><span style="color:var(--pro);font-weight:700">$85–145</span></td></tr>
+      <tr><td><strong>Precio venta sugerido</strong></td><td><span style="color:var(--eco);font-weight:700">$150–200</span></td><td><span style="color:var(--pro);font-weight:700">$350–500</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec">// MARGEN ESTIMADO POR VERSIÓN</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+    <div style="background:var(--eco-bg);border:2px solid var(--eco);border-radius:12px;padding:14px">
+      <div style="font-size:11px;color:var(--eco);font-family:&#39;Space Mono&#39;,monospace;margin-bottom:6px">VERSIÓN ECO</div>
+      <div style="font-size:12px;color:#374151;line-height:1.8">
+        Torre: ~$90<br>
+        Electrónica: ~$40<br>
+        3D: ~$5<br>
+        Mano de obra: ~$20<br>
+        <strong style="border-top:1px solid var(--eco);display:block;padding-top:4px;margin-top:4px">Total costo: ~$155</strong>
+        <strong style="color:var(--eco);font-size:14px">Venta: $200</strong><br>
+        <span style="color:var(--eco)">Margen: ~23%</span>
+      </div>
+    </div>
+    <div style="background:var(--pro-bg);border:2px solid var(--pro);border-radius:12px;padding:14px">
+      <div style="font-size:11px;color:var(--pro);font-family:&#39;Space Mono&#39;,monospace;margin-bottom:6px">VERSIÓN PRO</div>
+      <div style="font-size:12px;color:#374151;line-height:1.8">
+        Torre: ~$90<br>
+        Electrónica: ~$120<br>
+        3D: ~$12<br>
+        Mano de obra: ~$35<br>
+        <strong style="border-top:1px solid var(--pro);display:block;padding-top:4px;margin-top:4px">Total costo: ~$257</strong>
+        <strong style="color:var(--pro);font-size:14px">Venta: $450</strong><br>
+        <span style="color:var(--pro)">Margen: ~43%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>🎯 Estrategia recomendada</strong>
+    Lanza primero con la versión ECO para validar el mercado con menor inversión. Cuando tengas 3–5 clientes satisfechos, ofréceles el "upgrade PRO" con pH + EC + pantalla. La suscripción mensual de nutrientes (reposición automática) puede ser $15–25 USD/mes por cliente = ingreso recurrente sin esfuerzo extra.
+  </div>
+</div>
+
+<script>
+let currentVersion = 'eco';
+
+function setVersion(v, el) {
+  currentVersion = v;
+  document.querySelectorAll('.version-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+
+  document.getElementById('hero-eco').style.display = v === 'eco' ? 'flex' : 'none';
+  document.getElementById('hero-pro').style.display = v === 'pro' ? 'flex' : 'none';
+
+  const proComps = document.getElementById('pro-components');
+  if (proComps) proComps.style.display = v === 'pro' ? 'block' : 'none';
+
+  const proWiring = document.getElementById('pro-wiring');
+  if (proWiring) proWiring.style.display = v === 'pro' ? 'block' : 'none';
+}
+
+function showTab(name) {
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+
+</body></html>

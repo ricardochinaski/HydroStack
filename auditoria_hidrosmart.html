@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoría Técnica — HidroSmart</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Montserrat:wght@400;600;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: #0D1512;
+    background: #F4F6F5;
+    line-height: 1.6;
+    padding: 40px;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(13,21,18,0.06);
+    overflow: hidden;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(120deg, #0D1512 0%, #1B4D3E 100%);
+    padding: 48px 56px;
+    color: white;
+  }
+  .header .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #14B8A6;
+    border: 1px solid #14B8A6;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 32px;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .header p {
+    font-size: 14px;
+    color: #94A39C;
+    max-width: 600px;
+  }
+  .header .meta {
+    margin-top: 24px;
+    display: flex;
+    gap: 32px;
+  }
+  .header .meta span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #94A39C;
+  }
+
+  /* Sections */
+  .content { padding: 48px 56px; }
+
+  h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: #0D1512;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #2E7D5B;
+  }
+  h2:first-child { margin-top: 0; }
+
+  h3 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: #2E7D5B;
+    margin-top: 28px;
+    margin-bottom: 8px;
+  }
+
+  h4 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: #14B8A6;
+    margin-top: 20px;
+    margin-bottom: 6px;
+  }
+
+  p { font-size: 13.5px; margin-bottom: 12px; color: #333; }
+
+  ul, ol { margin: 8px 0 16px 20px; }
+  li { font-size: 13.5px; margin-bottom: 6px; color: #333; }
+
+  /* Code blocks */
+  pre {
+    background: #0D1512;
+    color: #E2E8E5;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    padding: 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    line-height: 1.5;
+  }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: #EAF5F0;
+    color: #2E7D5B;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 13px;
+  }
+  th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-align: left;
+    padding: 12px 14px;
+    background: #F4F6F5;
+    border-bottom: 2px solid #E2E8E5;
+    color: #5A6B62;
+  }
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #E2E8E5;
+  }
+  .priority-critical { color: #DC2626; font-weight: 700; }
+  .priority-high { color: #F59E0B; font-weight: 700; }
+  .priority-medium { color: #3B82F6; font-weight: 700; }
+  .priority-low { color: #94A39C; }
+
+  /* Cards */
+  .card {
+    background: #F4F6F5;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    border-left: 3px solid #2E7D5B;
+  }
+  .card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: #5A6B62;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  /* Architecture diagram placeholder */
+  .diagram {
+    background: #0D1512;
+    color: #E2E8E5;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 24px;
+    border-radius: 8px;
+    margin: 16px 0 20px;
+    white-space: pre;
+    line-height: 1.5;
+    overflow-x: auto;
+  }
+
+  /* Footer */
+  .footer {
+    padding: 32px 56px;
+    border-top: 1px solid #E2E8E5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #94A39C;
+  }
+  .footer strong { color: #2E7D5B; }
+
+  @media print {
+    body { padding: 0; background: white; }
+    .page { box-shadow: none; border-radius: 0; max-width: 100%; }
+    .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    pre { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .diagram { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="tag">AUDITORÍA TÉCNICA · v1.0</div>
+    <h1>HidroSmart</h1>
+    <p>Informe de arquitectura, mejoras críticas y hoja de ruta para la aplicación móvil de automatización hidropónica de gama alta con ESP32, Firebase y modelo FaaS.</p>
+    <div class="meta">
+      <span>PROYECTO: HidroSmart · "Inteligencia Líquida, Nutrición Consciente"</span>
+      <span>FECHA: Junio 2026</span>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ============================================================ -->
+    <h2>1. ARQUITECTURA DE DATOS E IoT EN FLUTTER</h2>
+
+    <!-- 1.1 -->
+    <h3>1.1 Estrategia de Sincronización Realtime</h3>
+    <p><strong>Problema actual:</strong> No existe conexión real con el ESP32. Cuando llegue, los sensores de pH (GPIO34) y EC (GPIO35) emitirán lecturas analógicas cada ~200ms. Persistir cada lectura individual en Firebase RTDB o MQTT saturará la red, quemará ancho de banda y congelará la UI con rebuilds innecesarios.</p>
+
+    <h4>Solución: Pipeline de 3 capas</h4>
+    <div class="diagram">
+ESP32 ADC (200ms)
+     │
+     ▼
+ [Throttle 1s]  ←── firmware: publicar cada 1s máximo
+     │
+     ▼
+ MQTT Broker / Firebase RTDB
+     │
+     ▼
+ Flutter StreamSubscription
+     │
+     ▼
+ [Debounce 500ms + Distinct by deadband]
+     │
+     ▼
+ Riverpod StreamProvider&lt;SensorLectura&gt;
+     │
+     ▼
+ UI (ConsumerWidget)
+    </div>
+
+    <h4>Lógica de deadband (histéresis)</h4>
+    <p>Ignorar variaciones menores a 0.05 en pH y 0.02 en EC para evitar ruido eléctrico del ADC:</p>
+<pre><code>bool _withinDeadband(SensorLectura a, SensorLectura b) {
+  return (a.ph - b.ph).abs() &lt; 0.05 &&
+         (a.ec - b.ec).abs() &lt; 0.02;
+}
+
+final sensorTelemetryProvider = StreamProvider&lt;SensorLectura&gt;((ref) {
+  return _esp32Stream
+    .throttle(const Duration(seconds: 1))
+    .debounce(const Duration(milliseconds: 500))
+    .distinct(_withinDeadband)
+    .asyncMap(_calibrate);
+});</code></pre>
+
+    <h4>Throttling del lado del ESP32 (firmware)</h4>
+<pre><code>unsigned long lastPublish = 0;
+void loop() {
+  if (millis() - lastPublish &gt;= 1000) {
+    float ph = analogRead(34) * (3.3 / 4095.0);
+    float ec = analogRead(35) * (3.3 / 4095.0);
+    client.publish("hidrosmart/sensores", serialize(ph, ec));
+    lastPublish = millis();
+  }
+}</code></pre>
+
+    <!-- 1.2 -->
+    <h3>1.2 Estado Fuera de Línea (Offline First)</h3>
+
+    <h4>Arquitectura: Repository con Source of Truth local</h4>
+    <div class="diagram">
+┌─────────────┐     ┌──────────────────┐     ┌──────────────┐
+│   UI Layer  │◄───►│ Riverpod Providers│◄───►│  Repository  │
+└─────────────┘     └──────────────────┘     └──────┬───────┘
+                                                     │
+                                           ┌─────────┴─────────┐
+                                           ▼                   ▼
+                                    ┌──────────┐      ┌──────────────┐
+                                    │  SQLite   │      │  Firebase /  │
+                                    │ (local)   │      │   MQTT       │
+                                    └──────────┘      └──────────────┘
+    </div>
+
+    <h4>Reglas de negocio para offline</h4>
+    <table>
+      <tr><th>Componente</th><th>Comportamiento offline</th><th>Sincronización</th></tr>
+      <tr><td>Lecturas de sensores</td><td>Almacenar en SQLite</td><td>Batch al reconectar</td></tr>
+      <tr><td>Comandos (regar, cambiar modo)</td><td>Encolar en tabla <code>pending_commands</code></td><td>FIFO cuando ESP32 responde</td></tr>
+      <tr><td>Alertas</td><td>Generar local si sin dato &gt; 30s</td><td>Inmediato (local)</td></tr>
+      <tr><td>Configuración de usuario</td><td>SharedPreferences</td><td>Firestore al reconectar</td></tr>
+    </table>
+
+    <h4>Command Queue Service (código conceptual)</h4>
+<pre><code>class CommandQueueService {
+  final LocalDb _db;
+  final MqttService _mqtt;
+
+  Future&lt;void&gt; enqueue(ActuatorCommand cmd) async {
+    await _db.insertPending(cmd);
+    try {
+      await _mqtt.publish(cmd.topic, cmd.payload);
+      await _db.markSynced(cmd.id);
+    } on SocketException {
+      // queda en pending, se reintenta en próximo ciclo
+    }
+  }
+
+  Future&lt;void&gt; flushPending() async {
+    for (final cmd in await _db.getPending()) {
+      await _mqtt.publish(cmd.topic, cmd.payload);
+      await _db.markSynced(cmd.id);
+    }
+  }
+}</code></pre>
+
+    <h4>Dependencias a agregar en pubspec.yaml</h4>
+<pre><code>dependencies:
+  sqflite: ^2.3.0
+  path: ^1.9.0
+  firebase_database: ^11.0.0
+  mqtt_client: ^10.4.0
+  connectivity_plus: ^6.0.0
+  flutter_local_notifications: ^18.0.0</code></pre>
+
+    <!-- 1.3 -->
+    <h3>1.3 Gestión de Estado (Riverpod vs BLoC)</h3>
+
+    <p><strong>Recomendación: Mantener Riverpod.</strong> Es superior para este caso por 3 razones:</p>
+    <ol>
+      <li><strong><code>StreamProvider</code> nativo</strong> — Engancha directo al stream de Firebase/MQTT sin el boilerplate BLoC (Event → State → Bloc → UI).</li>
+      <li><strong><code>.family</code> modifiers</strong> — Cada planta/sensor puede tener su propio provider parametrizado sin instanciar N Blocs.</li>
+      <li><strong><code>ref.invalidate()</code></strong> — Para forzar recarga de catálogo, comandos, etc., sin reinjectar dependencias.</li>
+    </ol>
+
+    <h4>Arquitectura de capas</h4>
+    <div class="diagram">
+┌──────────────────────────────────────────────┐
+│ UI Layer (ConsumerWidget)                     │
+│   plantas_list_screen.dart                    │
+│   planta_detail_screen.dart                   │
+│   control_panel_screen.dart                   │
+└──────────────────┬────────────────────────────┘
+                   │ ref.watch(provider)
+┌──────────────────▼────────────────────────────┐
+│ Riverpod Providers Layer                       │
+│   sensorTelemetryProvider (StreamProvider)     │
+│   actuadorCommandProvider (StateNotifier)      │
+│   offlineQueueProvider                         │
+│   userModeProvider                             │
+│   faasOrderProvider                            │
+└──────────────────┬────────────────────────────┘
+                   │ llama a servicios
+┌──────────────────▼────────────────────────────┐
+│ Service Layer (inyectados como providers)      │
+│   MqttService / FirebaseRealtimeService        │
+│   LocalDatabaseService (sqflite)               │
+│   FaaSService (Stripe / Google Pay)            │
+└──────────────────┬────────────────────────────┘
+                   │ comunicación I/O
+┌──────────────────▼────────────────────────────┐
+│ Hardware Abstraction Layer (HAL)               │
+│   Esp32CommService (MQTT / Firebase)           │
+│   SensorCalibration (ADC → pH / EC real)       │
+└───────────────────────────────────────────────┘
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>2. MEJORAS DE UX/UI PREMIUM Y MICROINTERACCIONES</h2>
+
+    <h3>2.1 Visualización de Métricas Líquidas</h3>
+    <p><strong>Problema actual:</strong> Los valores son texto estático en <code>StatCard</code>. Se siente muerto.</p>
+
+    <h4>a) Gráfico de Onda en Vivo para pH</h4>
+    <p>Mini chart tipo "latido" con los últimos 30 segundos de datos, debajo del valor numérico en Montserrat 800 Teal:</p>
+<pre><code>class PhWaveform extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final historial = ref.watch(sensorHistoryProvider(30));
+    return Container(height: 60, child: LineChart(
+      LineChartData(lineBarsData: [
+        LineChartBarData(
+          spots: historial.asMap().entries
+            .map((e) =&gt; FlSpot(e.key.toDouble(), e.value.ph))
+            .toList(),
+          isCurved: true,
+          color: AppColors.circuit.withValues(alpha: 0.8),
+          dotData: const FlDotData(show: false),
+          belowBarData: BarAreaData(
+            show: true,
+            color: AppColors.circuit.withValues(alpha: 0.08),
+          ),
+        ),
+      ]),
+      gridData: const FlGridData(show: false),
+      titlesData: const FlTitlesData(show: false),
+    ));
+  }
+}</code></pre>
+
+    <h4>b) Transición Numérica Animada</h4>
+    <p>Cada vez que el valor cambia, el dígito hace una transición fluida con <code>TweenAnimationBuilder</code>:</p>
+<pre><code>TweenAnimationBuilder&lt;double&gt;(
+  tween: Tween(begin: previousPH, end: currentPH),
+  duration: const Duration(milliseconds: 600),
+  curve: Curves.easeOutCubic,
+  builder: (_, value, __) =&gt; Text(
+    value.toStringAsFixed(1),
+    style: const TextStyle(
+      fontFamily: 'Montserrat', fontSize: 32,
+      fontWeight: FontWeight.w800, color: AppColors.circuit,
+    ),
+  ),
+);</code></pre>
+
+    <h4>c) Círculo de Gauge para EC</h4>
+    <p>Para el valor de Conductividad Eléctrica, un semicírculo tipo velocímetro con gradiente (verde → amarillo → rojo) usando <code>CustomPainter</code> es más impactante que un número solo.</p>
+
+    <h3>2.2 Transición de Modos [ECO] · [AUTÓNOMO] · [PRO]</h3>
+    <p><strong>Efecto deseado:</strong> El usuario toca "Activar modo PRO" y el dashboard hace una transición fluida donde las tarjetas se "expanden" para revelar nueva telemetría.</p>
+
+<pre><code>class ModeTransitionDashboard extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(userModeProvider);
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 500),
+      switchInCurve: Curves.easeOutCubic,
+      child: _buildForMode(mode, key: ValueKey(mode)),
+    );
+  }
+
+  Widget _buildForMode(AppMode mode, {Key? key}) {
+    switch (mode) {
+      case AppMode.eco:        return _EcoDashboard(key: key);
+      case AppMode.autonomo:   return _AutonomoDashboard(key: key);
+      case AppMode.pro:        return _ProDashboard(key: key);
+    }
+  }
+}</code></pre>
+
+    <div class="card">
+      <div class="card-title">Lado firmware ESP32</div>
+      <p>Al cambiar de modo, la app envía un comando MQTT <code>hidrosmart/modo</code> con payload <code>"eco"|"autonomo"|"pro"</code>. El ESP32 ajusta los umbrales de los relés en consecuencia (GPIO25, GPIO26, GPIO27).</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>3. IMPLEMENTACIÓN ESTRATÉGICA DEL MODELO FaaS</h2>
+
+    <h3>3.1 Flujo de Compra en Un Clic — Suscripción de Nutrientes</h3>
+
+    <div class="diagram">
+Sensor EC (GPIO35) lee 1.2 mS (umbral bajo)
+       │
+       ▼
+ESP32 publica: "hidrosmart/nivel/nutrientes" → "bajo"
+       │
+       ▼
+Flutter recibe, genera alerta local + notificación push
+       │
+       ▼
+Tarjeta FaaS aparece en dashboard PRO:
+  "NUTRIENTES BAJOS — Reponer ahora $29.99"
+       │
+       ▼
+Usuario toca → Sheet modal con resumen + Apple Pay / Google Pay
+       │
+       ▼
+Pasarela confirma → Firebase Functions genera cupón → envío real
+       │
+       ▼
+App muestra countdown: "Llega en 2 días. Modo reserva activado."
+    </div>
+
+    <h4>Providers para FaaS</h4>
+<pre><code>final nutrientLevelProvider = StreamProvider&lt;NutrientStatus&gt;((ref) {
+  return ref.watch(sensorTelemetryProvider).map((s) {
+    if (s.ec &lt; 1.4) return NutrientStatus.critical;
+    if (s.ec &lt; 2.0) return NutrientStatus.low;
+    return NutrientStatus.ok;
+  });
+});
+
+final faasOrderProvider = StateNotifierProvider&lt;FaaSOrderNotifier, FaaSOrderState&gt;((ref) {
+  return FaaSOrderNotifier(ref.watch(paymentsServiceProvider));
+});
+
+class FaaSOrderNotifier extends StateNotifier&lt;FaaSOrderState&gt; {
+  final PaymentsService _payments;
+
+  Future&lt;void&gt; oneClickOrder() async {
+    state = FaaSOrderState.processing;
+    try {
+      final receipt = await _payments.charge(
+        amount: 29.99,
+        description: 'Kit de nutrientes PRO - Reposición',
+      );
+      await _sendOrderToBackend(receipt.id);
+      state = FaaSOrderState.confirmed(deliveryDays: 2);
+    } catch (e) {
+      state = FaaSOrderState.failed(e.toString());
+    }
+  }
+}</code></pre>
+
+    <h4>Deep link desde notificación push</h4>
+<pre><code>final faasDeepLink = '/faas/reorder/${plantaId}';
+
+// En router.dart:
+GoRoute(
+  path: '/faas/reorder/:plantaId',
+  pageBuilder: (_, state) =&gt; CustomTransitionPage(
+    child: FaasReorderSheet(plantaId: state.pathParameters['plantaId']!),
+    transitionsBuilder: (_, animation, __, child) =&gt;
+      SlideTransition(
+        position: Tween(begin: Offset(0, 1), end: Offset.zero)
+          .animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+        child: child,
+      ),
+  ),
+);</code></pre>
+
+    <!-- ============================================================ -->
+    <h2>4. SEGURIDAD, PROVISIONING Y FAIL-SAFE</h2>
+
+    <h3>4.1 Fail-Safe: Pérdida de Comunicación con el ESP32</h3>
+
+    <h4>Lógica temporal (timeouts)</h4>
+    <table>
+      <tr><th>Evento</th><th>Acción en App</th></tr>
+      <tr><td>Sin dato de sensor &gt; 10s</td><td>Banner "SIN SEÑAL" ámbar en cabecera</td></tr>
+      <tr><td>Sin dato &gt; 30s</td><td>Alerta push local + ocultar controles de actuadores (modo seguro)</td></tr>
+      <tr><td>Sin dato &gt; 60s</td><td>Asumir ESP32 offline — mostrar pantalla de reconexión con tutorial</td></tr>
+    </table>
+
+    <h4>Watchdog Timer en Flutter</h4>
+<pre><code>final connectionWatchdogProvider = Provider&lt;Timer&gt;((ref) {
+  final timer = Timer.periodic(const Duration(seconds: 10), (_) {
+    final lastSeen = ref.read(lastSensorTimestampProvider);
+    final delta = DateTime.now().difference(lastSeen);
+    if (delta.inSeconds &gt; 30) {
+      ref.read(connectionStatusProvider.notifier).state =
+          ConnectionStatus.lost;
+    } else if (delta.inSeconds &gt; 10) {
+      ref.read(connectionStatusProvider.notifier).state =
+          ConnectionStatus.unstable;
+    }
+  });
+  ref.onDispose(timer.cancel);
+  return timer;
+});</code></pre>
+
+    <h4>Heartbeat mutuo desde el ESP32</h4>
+<pre><code>// En el loop del ESP32
+client.publish("hidrosmart/heartbeat", "alive");
+delay(5000);</code></pre>
+
+    <h3>4.2 Vinculación Inicial (Device Provisioning)</h3>
+    <p><strong>Recomendación:</strong> Usar <strong>ESP32 como Access Point + Captive Portal</strong> (modo AP) como método primario, con BLE como fallback. Es el estándar de la industria (Philips Hue, Tesla, DJI).</p>
+
+    <h4>Flujo de provisioning</h4>
+    <div class="diagram">
+1. Usuario toca "Vincular ESP32" en app
+2. ESP32 inicia en modo AP (Wi-Fi directo "HidroSmart-XXXX")
+3. App detecta la red, se conecta automáticamente
+4. App envía credenciales Wi-Fi del hogar vía HTTP POST
+5. ESP32 se conecta al Wi-Fi del hogar, cierra el AP
+6. ESP32 publica "hidrosmart/discover" con su ID único
+7. App lo asocia a la cuenta del usuario en Firebase
+    </div>
+
+    <h4>Código conceptual — provisioning_wizard_screen.dart</h4>
+<pre><code>Future&lt;void&gt; provisionDevice() async {
+  // 1. Escanear redes Wi-Fi
+  final networks = await WiFiForIoTPlugin.scan();
+  // 2. Conectar a red "HidroSmart-*"
+  final hidroNet = networks.firstWhere((n) =&gt; n.ssid.startsWith('HidroSmart-'));
+  await WiFiForIoTPlugin.connect(hidroNet.ssid);
+  // 3. Enviar credenciales vía HTTP
+  final response = await http.post(
+    Uri.parse('http://192.168.4.1/provision'),
+    body: {'ssid': homeSSID, 'password': homePassword},
+  );
+  // 4. Esperar heartbeat en MQTT
+  await mqtt.waitForTopic('hidrosmart/heartbeat', timeout: Duration(seconds: 30));
+  // 5. Vincular en Firebase
+  await FirebaseDatabase.instance.ref('usuarios/$uid/dispositivos').push({
+    'esp32_id': response.body,
+    'alias': 'Mi HidroSmart',
+    'mode': 'eco',
+  });
+}</code></pre>
+
+    <h4>Dependencias adicionales para provisioning</h4>
+<pre><code>dependencies:
+  wifi_iot: ^0.3.0
+  flutter_blue_plus: ^1.32.0</code></pre>
+
+    <!-- ============================================================ -->
+    <h2>5. HOJA DE RUTA PRIORIZADA</h2>
+
+    <table>
+      <tr><th>Prioridad</th><th>Tarea</th><th>Impacto</th><th>Esfuerzo</th></tr>
+      <tr>
+        <td><span class="priority-critical">● Crítica</span></td>
+        <td>Agregar <code>sqflite</code> + <code>connectivity_plus</code> para arquitectura offline-first</td>
+        <td>Sin esto la app es inservible sin internet</td>
+        <td>3-5 días</td>
+      </tr>
+      <tr>
+        <td><span class="priority-critical">● Crítica</span></td>
+        <td>Pipeline de throttling + debounce + deadband en streams de sensores</td>
+        <td>Saturación de RTDB y UI congelada</td>
+        <td>2-3 días</td>
+      </tr>
+      <tr>
+        <td><span class="priority-high">● Alta</span></td>
+        <td>Watchdog de conexión + fail-safe (timeouts 10s/30s/60s)</td>
+        <td>Seguridad del cultivo</td>
+        <td>2 días</td>
+      </tr>
+      <tr>
+        <td><span class="priority-high">● Alta</span></td>
+        <td>Provisioning wizard (modo AP + captive portal)</td>
+        <td>Experiencia de onboarding</td>
+        <td>4-6 días</td>
+      </tr>
+      <tr>
+        <td><span class="priority-medium">● Media</span></td>
+        <td>Animación de transición de modos (AnimatedSwitcher + Stagger)</td>
+        <td>Diferenciación premium</td>
+        <td>2 días</td>
+      </tr>
+      <tr>
+        <td><span class="priority-medium">● Media</span></td>
+        <td>FaaS one-click purchase sheet + notificación push</td>
+        <td>Monetización recurrente</td>
+        <td>4-5 días</td>
+      </tr>
+      <tr>
+        <td><span class="priority-low">● Deseable</span></td>
+        <td>Waveform animado de pH + Gauge de EC (CustomPainter)</td>
+        <td>Engagement visual</td>
+        <td>3-4 días</td>
+      </tr>
+      <tr>
+        <td><span class="priority-low">● Deseable</span></td>
+        <td>Integración real de firebase_database + mqtt_client</td>
+        <td>Paso a producción</td>
+        <td>3-5 días</td>
+      </tr>
+    </table>
+
+    <div class="card" style="margin-top: 32px; border-left-color: #14B8A6;">
+      <div class="card-title">Recomendación final</div>
+      <p style="font-size: 14px; font-weight: 500; color: #0D1512;">
+        La app actual tiene una base sólida (estructura de carpetas, sistema de diseño premium, Riverpod, go_router, modelo de datos).<br><br>
+        Las dos únicas inversiones críticas antes de cualquier feature nuevo son: <strong>(1) offline-first con sqflite</strong> y <strong>(2) pipeline de throttling en los streams de sensores</strong>. Sin ellas, la app no podrá sostener una conexión real con el ESP32 en condiciones domésticas reales (cortes de Wi-Fi, ruido ADC, latencia de red).<br><br>
+        Una vez resuelta la capa de comunicación, el modelo FaaS y las microinteracciones premium serán los diferenciadores que justificarán el precio del hardware y la suscripción recurrente.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>Auditoría Técnica — <strong>HidroSmart</strong></span>
+    <span>Generado: Junio 2026 · v1.0</span>
+  </div>
+
+</div>
+
+</body>
+</html>

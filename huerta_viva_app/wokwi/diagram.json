@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "author": "HidroSmart",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": -150, "left": 200, "attrs": { "value": "50" } },
+    { "type": "wokwi-potentiometer", "id": "pot2", "top": -150, "left": 400, "attrs": { "value": "50" } },
+    { "type": "wokwi-led", "id": "led1", "top": 200, "left": 200, "attrs": { "color": "green" } },
+    { "type": "wokwi-led", "id": "led2", "top": 200, "left": 320, "attrs": { "color": "blue" } },
+    { "type": "wokwi-led", "id": "led3", "top": 200, "left": 440, "attrs": { "color": "white" } },
+    { "type": "wokwi-resistor", "id": "r1", "top": 200, "left": 240, "attrs": { "resistance": "220" } },
+    { "type": "wokwi-resistor", "id": "r2", "top": 200, "left": 360, "attrs": { "resistance": "220" } },
+    { "type": "wokwi-resistor", "id": "r3", "top": 200, "left": 480, "attrs": { "resistance": "220" } }
+  ],
+  "connections": [
+    ["pot1:W", "esp:34", "green", ["v"]],
+    ["pot1:GND", "esp:GND.1", "black", ["v"]],
+    ["pot1:VCC", "esp:3V3", "red", ["v"]],
+    ["pot2:W", "esp:35", "blue", ["v"]],
+    ["pot2:GND", "esp:GND.2", "black", ["v"]],
+    ["pot2:VCC", "esp:3V3", "red", ["v"]],
+    ["esp:25", "r1:A", "yellow", ["v"]],
+    ["r1:B", "led1:A", "yellow", ["v"]],
+    ["led1:C", "esp:GND.3", "black", ["v"]],
+    ["esp:26", "r2:A", "yellow", ["v"]],
+    ["r2:B", "led2:A", "yellow", ["v"]],
+    ["led2:C", "esp:GND.3", "black", ["v"]],
+    ["esp:27", "r3:A", "yellow", ["v"]],
+    ["r3:B", "led3:A", "yellow", ["v"]],
+    ["led3:C", "esp:GND.3", "black", ["v"]]
+  ],
+  "libraries": []
+}

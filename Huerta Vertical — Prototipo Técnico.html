@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<!-- saved from url=(0063)file:///C:/Users/ricar/Downloads/huerta_vertical_prototipo.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Huerta Vertical — Prototipo Técnico</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --verde-vivo: #5A9A3A;
+    --verde-claro: #8DC63F;
+    --verde-agua: #C8E6C9;
+    --tierra: #3D2B1F;
+    --arena: #F5F0E8;
+    --blanco: #FFFFFF;
+    --gris-suave: #F0EDE8;
+    --texto: #1A1A1A;
+    --acento: #FF6B35;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--arena);
+    color: var(--texto);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--tierra);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-circle {
+    width: 40px; height: 40px;
+    background: var(--verde-claro);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  header h1 {
+    font-size: 18px;
+    color: var(--blanco);
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  header span {
+    font-size: 11px;
+    color: var(--verde-agua);
+    font-family: 'Space Mono', monospace;
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* HERO STATS */
+  .stats-bar {
+    background: var(--verde-vivo);
+    padding: 14px 24px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    text-align: center;
+  }
+  .stat {
+    color: white;
+  }
+  .stat-num {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    font-family: 'Space Mono', monospace;
+  }
+  .stat-label {
+    font-size: 10px;
+    opacity: 0.85;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: var(--gris-suave);
+    border-bottom: 2px solid #E0DBD3;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    color: #888;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    color: var(--verde-vivo);
+    border-bottom-color: var(--verde-vivo);
+    background: var(--arena);
+  }
+
+  /* CONTENIDO */
+  .content { display: none; padding: 20px 20px 40px; }
+  .content.active { display: block; }
+
+  /* DIAGRAMA TORRE */
+  .tower-container {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .tower-svg-wrap {
+    flex: 0 0 auto;
+  }
+
+  .tower-legend {
+    flex: 1;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    background: white;
+    border-radius: 8px;
+    border-left: 3px solid var(--verde-claro);
+  }
+  .legend-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--verde-vivo);
+    background: var(--verde-agua);
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .legend-text strong {
+    font-size: 13px;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .legend-text p {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.4;
+  }
+
+  /* CARDS MATERIALES */
+  .section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--tierra);
+    margin-bottom: 14px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--verde-agua);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .materials-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .material-card {
+    background: white;
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid #E8E4DC;
+    position: relative;
+  }
+  .material-card .emoji {
+    font-size: 22px;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .material-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .material-card p {
+    font-size: 11px;
+    color: #777;
+    line-height: 1.4;
+  }
+  .price-tag {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: var(--verde-vivo);
+    color: white;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .price-tag.highlight {
+    background: var(--acento);
+  }
+
+  /* TOTAL */
+  .total-box {
+    background: var(--tierra);
+    color: white;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .total-box span { font-size: 13px; opacity: 0.8; }
+  .total-box strong {
+    font-size: 20px;
+    font-family: 'Space Mono', monospace;
+    color: var(--verde-claro);
+  }
+
+  /* PASOS */
+  .step {
+    background: white;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+    border-left: 4px solid var(--verde-claro);
+    position: relative;
+  }
+  .step-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--verde-vivo);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .step h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 4px 0 4px;
+  }
+  .step p {
+    font-size: 12px;
+    color: #555;
+    line-height: 1.5;
+  }
+  .step .tip {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #FFF8F5;
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--acento);
+    border: 1px solid #FFE0D3;
+  }
+  .step .tip::before { content: '💡 '; }
+
+  /* RIEGO */
+  .riego-diagram {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    line-height: 2;
+    color: var(--tierra);
+    border: 1px solid #E8E4DC;
+    overflow-x: auto;
+  }
+  .riego-diagram .flow-arrow { color: var(--verde-vivo); font-weight: 700; }
+  .riego-diagram .component { color: var(--acento); }
+
+  /* FASE ROADMAP */
+  .phase {
+    background: white;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+    border: 1px solid #E8E4DC;
+  }
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .phase-badge {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+  .phase-badge.now { background: #E8F5E9; color: var(--verde-vivo); }
+  .phase-badge.next { background: #FFF3E0; color: #E65100; }
+  .phase-badge.future { background: #EDE7F6; color: #4527A0; }
+  .phase h3 { font-size: 14px; font-weight: 600; }
+  .phase ul {
+    list-style: none;
+    padding: 0;
+  }
+  .phase ul li {
+    font-size: 12px;
+    color: #555;
+    padding: 3px 0 3px 18px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .phase ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--verde-vivo);
+    font-weight: 700;
+  }
+  .phase-cost {
+    margin-top: 10px;
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: #888;
+    background: var(--gris-suave);
+    padding: 6px 10px;
+    border-radius: 6px;
+  }
+
+  /* NOTA IMPORTANTE */
+  .nota {
+    background: #FFF3E0;
+    border: 1px solid #FFB74D;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 12px;
+    color: #E65100;
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+  .nota strong { display: block; margin-bottom: 4px; font-size: 13px; }
+
+  /* MEDIDAS */
+  .medidas-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .medidas-table th {
+    background: var(--verde-vivo);
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+  }
+  .medidas-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #F0EDE8;
+    color: var(--texto);
+  }
+  .medidas-table tr:last-child td { border-bottom: none; }
+  .medidas-table tr:nth-child(even) td { background: #FAFAF8; }
+  .medidas-table td:first-child { font-weight: 600; }
+
+  .highlight-cell {
+    color: var(--verde-vivo);
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-circle">🌿</div>
+  <div>
+    <h1>Huerta Vertical DIY</h1>
+    <span>PROTOTIPO TÉCNICO — 1.65m · 8 niveles · 24 plantas</span>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-num">24</div>
+    <div class="stat-label">Plantas</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">1.65m</div>
+    <div class="stat-label">Altura</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">~$90</div>
+    <div class="stat-label">Costo est.</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab(&#39;diagrama&#39;)">🌿 Diagrama</div>
+  <div class="tab" onclick="showTab(&#39;medidas&#39;)">📐 Medidas</div>
+  <div class="tab" onclick="showTab(&#39;materiales&#39;)">🛒 Materiales</div>
+  <div class="tab" onclick="showTab(&#39;pasos&#39;)">🔧 Construcción</div>
+  <div class="tab" onclick="showTab(&#39;riego&#39;)">💧 Riego</div>
+  <div class="tab" onclick="showTab(&#39;roadmap&#39;)">🚀 Roadmap</div>
+</div>
+
+<!-- TAB: DIAGRAMA -->
+<div id="tab-diagrama" class="content active">
+  <div class="tower-container">
+    <div class="tower-svg-wrap">
+      <svg width="130" height="500" viewBox="0 0 130 500">
+        <!-- Reservorio -->
+        <ellipse cx="65" cy="480" rx="55" ry="16" fill="#8DC63F" opacity="0.3"></ellipse>
+        <rect x="10" y="464" width="110" height="20" rx="4" fill="#8DC63F" opacity="0.4"></rect>
+        <text x="65" y="494" font-family="Space Mono" font-size="8" fill="#5A9A3A" text-anchor="middle">RESERVORIO 35L</text>
+
+        <!-- Tubo central -->
+        <rect x="52" y="60" width="26" height="400" rx="4" fill="#E8E4DC"></rect>
+        <rect x="54" y="60" width="22" height="400" rx="3" fill="#F5F0E8" stroke="#D0C8BC" stroke-width="1"></rect>
+
+        <!-- Manguera interna -->
+        <line x1="65" y1="70" x2="65" y2="460" stroke="#5A9A3A" stroke-width="2" stroke-dasharray="4,3"></line>
+
+        <!-- Bomba -->
+        <rect x="56" y="455" width="18" height="10" rx="3" fill="#FF6B35"></rect>
+        <text x="65" y="463" font-family="Space Mono" font-size="7" fill="white" text-anchor="middle">BOMBA</text>
+
+        <!-- Nivel 8 -->
+        <g transform="translate(0, 70)">
+          <ellipse cx="65" cy="10" rx="28" ry="8" fill="#8DC63F" opacity="0.8"></ellipse>
+          <text x="65" y="13" font-family="Space Mono" font-size="7" fill="white" text-anchor="middle">NIV 8</text>
+          <circle cx="30" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="100" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="65" cy="-4" r="5" fill="#5A9A3A"></circle>
+          <text x="16" y="9" font-family="Space Mono" font-size="7" fill="#888">1.44m</text>
+        </g>
+        <!-- Nivel 7 -->
+        <g transform="translate(0, 120)">
+          <ellipse cx="65" cy="10" rx="28" ry="8" fill="#8DC63F" opacity="0.7"></ellipse>
+          <text x="65" y="13" font-family="Space Mono" font-size="7" fill="white" text-anchor="middle">NIV 7</text>
+          <circle cx="30" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="100" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="65" cy="-4" r="5" fill="#5A9A3A"></circle>
+          <text x="16" y="9" font-family="Space Mono" font-size="7" fill="#888">1.26m</text>
+        </g>
+        <!-- Nivel 6 -->
+        <g transform="translate(0, 170)">
+          <ellipse cx="65" cy="10" rx="28" ry="8" fill="#8DC63F" opacity="0.65"></ellipse>
+          <text x="65" y="13" font-family="Space Mono" font-size="7" fill="white" text-anchor="middle">NIV 6</text>
+          <circle cx="30" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="100" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="65" cy="-4" r="5" fill="#5A9A3A"></circle>
+          <text x="16" y="9" font-family="Space Mono" font-size="7" fill="#888">1.08m</text>
+        </g>
+        <!-- Nivel 5 -->
+        <g transform="translate(0, 220)">
+          <ellipse cx="65" cy="10" rx="28" ry="8" fill="#8DC63F" opacity="0.6"></ellipse>
+          <text x="65" y="13" font-family="Space Mono" font-size="7" fill="white" text-anchor="middle">NIV 5</text>
+          <circle cx="30" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="100" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="65" cy="-4" r="5" fill="#5A9A3A"></circle>
+          <text x="16" y="9" font-family="Space Mono" font-size="7" fill="#888">0.90m</text>
+        </g>
+        <!-- Nivel 4 -->
+        <g transform="translate(0, 270)">
+          <ellipse cx="65" cy="10" rx="28" ry="8" fill="#8DC63F" opacity="0.55"></ellipse>
+          <text x="65" y="13" font-family="Space Mono" font-size="7" fill="white" text-anchor="middle">NIV 4</text>
+          <circle cx="30" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="100" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="65" cy="-4" r="5" fill="#5A9A3A"></circle>
+          <text x="16" y="9" font-family="Space Mono" font-size="7" fill="#888">0.72m</text>
+        </g>
+        <!-- Nivel 3 -->
+        <g transform="translate(0, 320)">
+          <ellipse cx="65" cy="10" rx="28" ry="8" fill="#8DC63F" opacity="0.5"></ellipse>
+          <text x="65" y="13" font-family="Space Mono" font-size="7" fill="white" text-anchor="middle">NIV 3</text>
+          <circle cx="30" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="100" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="65" cy="-4" r="5" fill="#5A9A3A"></circle>
+          <text x="16" y="9" font-family="Space Mono" font-size="7" fill="#888">0.54m</text>
+        </g>
+        <!-- Nivel 2 -->
+        <g transform="translate(0, 370)">
+          <ellipse cx="65" cy="10" rx="28" ry="8" fill="#8DC63F" opacity="0.45"></ellipse>
+          <text x="65" y="13" font-family="Space Mono" font-size="7" fill="white" text-anchor="middle">NIV 2</text>
+          <circle cx="30" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="100" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="65" cy="-4" r="5" fill="#5A9A3A"></circle>
+          <text x="16" y="9" font-family="Space Mono" font-size="7" fill="#888">0.36m</text>
+        </g>
+        <!-- Nivel 1 -->
+        <g transform="translate(0, 420)">
+          <ellipse cx="65" cy="10" rx="28" ry="8" fill="#8DC63F" opacity="0.4"></ellipse>
+          <text x="65" y="13" font-family="Space Mono" font-size="7" fill="white" text-anchor="middle">NIV 1</text>
+          <circle cx="30" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="100" cy="6" r="5" fill="#5A9A3A"></circle>
+          <circle cx="65" cy="-4" r="5" fill="#5A9A3A"></circle>
+          <text x="16" y="9" font-family="Space Mono" font-size="7" fill="#888">0.18m</text>
+        </g>
+
+        <!-- Flecha agua arriba -->
+        <line x1="65" y1="450" x2="65" y2="80" stroke="#FF6B35" stroke-width="1.5" marker-end="url(#arrow)"></line>
+        <defs>
+          <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#FF6B35"></path>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="tower-legend">
+      <div class="legend-item">
+        <div class="legend-num">①</div>
+        <div class="legend-text">
+          <strong>Tubo PVC 4" (10cm)</strong>
+          <p>Columna principal de 1.50m. El tubo de desagüe es más económico que el de presión.</p>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">②</div>
+        <div class="legend-text">
+          <strong>Huecos a 120° entre sí</strong>
+          <p>3 plantas por nivel, distribuidas en triángulo. Rotar cada nivel 60° para mejor luz.</p>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">③</div>
+        <div class="legend-text">
+          <strong>Manguera interna (línea verde)</strong>
+          <p>Tubo de ½" con agujeros cada 18cm. Distribuye agua uniformemente a cada nivel.</p>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">④</div>
+        <div class="legend-text">
+          <strong>Bomba sumergible</strong>
+          <p>500L/h mínimo. Conectada a timer para riego automático cada 2-4 horas.</p>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-num">⑤</div>
+        <div class="legend-text">
+          <strong>Reservorio 35L</strong>
+          <p>1 litro por planta = 24L mínimo. Aquí van los nutrientes disueltos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nota">
+    <strong>⚠️ Dato clave de investigación</strong>
+    Usa PVC de grado alimenticio (marcado NSF-61 o "potable"). El PVC de desagüe estándar puede liberar contaminantes a las plantas. Es un diferenciador importante para tu producto.
+  </div>
+</div>
+
+<!-- TAB: MEDIDAS -->
+<div id="tab-medidas" class="content">
+  <p class="section-title">// MEDIDAS EXACTAS</p>
+
+  <table class="medidas-table">
+    <thead>
+      <tr>
+        <th>Nivel</th>
+        <th>Altura desde base</th>
+        <th>Rotación hueco</th>
+        <th>Notas</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>NIV 1</td><td class="highlight-cell">18 cm</td><td>0°</td><td>Plantas rastreras</td></tr>
+      <tr><td>NIV 2</td><td class="highlight-cell">36 cm</td><td>60°</td><td>—</td></tr>
+      <tr><td>NIV 3</td><td class="highlight-cell">54 cm</td><td>120°</td><td>—</td></tr>
+      <tr><td>NIV 4</td><td class="highlight-cell">72 cm</td><td>0°</td><td>—</td></tr>
+      <tr><td>NIV 5</td><td class="highlight-cell">90 cm</td><td>60°</td><td>—</td></tr>
+      <tr><td>NIV 6</td><td class="highlight-cell">108 cm</td><td>120°</td><td>—</td></tr>
+      <tr><td>NIV 7</td><td class="highlight-cell">126 cm</td><td>0°</td><td>—</td></tr>
+      <tr><td>NIV 8</td><td class="highlight-cell">144 cm</td><td>60°</td><td>Plantas pequeñas</td></tr>
+    </tbody>
+  </table>
+
+  <table class="medidas-table">
+    <thead>
+      <tr><th>Componente</th><th>Medida</th><th>Observación</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Diámetro tubo principal</td><td class="highlight-cell">4" (10cm)</td><td>PVC grado alimenticio</td></tr>
+      <tr><td>Longitud tubo</td><td class="highlight-cell">1.50m</td><td>+ 15cm dentro del reservorio</td></tr>
+      <tr><td>Diámetro huecos plantas</td><td class="highlight-cell">5-6cm</td><td>Broca copa o caladora</td></tr>
+      <tr><td>Ángulo huecos</td><td class="highlight-cell">45°</td><td>Inclinados hacia abajo</td></tr>
+      <tr><td>Separación entre niveles</td><td class="highlight-cell">18cm</td><td>Mínimo para raíces</td></tr>
+      <tr><td>Manguera interna</td><td class="highlight-cell">½" (1.27cm)</td><td>Con agujeros c/ 18cm</td></tr>
+      <tr><td>Agujeros manguera interna</td><td class="highlight-cell">2mm diám.</td><td>Puntilla o aguja caliente</td></tr>
+      <tr><td>Capacidad reservorio</td><td class="highlight-cell">35 litros</td><td>Mínimo 24L (1L/planta)</td></tr>
+      <tr><td>Bomba recomendada</td><td class="highlight-cell">500L/h</td><td>Sumergible, bajo consumo</td></tr>
+    </tbody>
+  </table>
+
+  <div class="nota">
+    <strong>📐 Sobre los huecos a 45°</strong>
+    Inclina el taladro 45° hacia abajo al hacer los agujeros. Así la planta "mira" hacia afuera y arriba, recibe mejor la luz y el agua no entra directamente al hueco mojando el cuello de la planta (previene hongos).
+  </div>
+</div>
+
+<!-- TAB: MATERIALES -->
+<div id="tab-materiales" class="content">
+  <p class="section-title">// LISTA DE COMPRAS</p>
+
+  <div class="materials-grid">
+    <div class="material-card">
+      <span class="emoji">🔩</span>
+      <span class="price-tag">$15-20</span>
+      <h3>Tubo PVC 4" × 1.5m</h3>
+      <p>Grado alimenticio. Desagüe funciona pero verifica que sea NSF o apto agua potable.</p>
+    </div>
+    <div class="material-card">
+      <span class="emoji">🪣</span>
+      <span class="price-tag">$8-12</span>
+      <h3>Balde / tazón 35L</h3>
+      <p>Base del sistema. Oscuro opaco para evitar algas. Con tapa si es posible.</p>
+    </div>
+    <div class="material-card">
+      <span class="emoji">⚡</span>
+      <span class="price-tag highlight">$8-15</span>
+      <h3>Bomba sumergible</h3>
+      <p>500L/h mínimo. Bajo consumo (5-10W). Marcas: Atman, SUNSUN, Jebao.</p>
+    </div>
+    <div class="material-card">
+      <span class="emoji">💧</span>
+      <span class="price-tag">$3-5</span>
+      <h3>Manguera ½" × 2m</h3>
+      <p>Para el riego interno. Flexible, que no se doble al subir verticalmente.</p>
+    </div>
+    <div class="material-card">
+      <span class="emoji">🔌</span>
+      <span class="price-tag highlight">$5-10</span>
+      <h3>Timer mecánico</h3>
+      <p>Enchufe con temporizador. Activa la bomba cada 2-4 horas por 15-30 minutos.</p>
+    </div>
+    <div class="material-card">
+      <span class="emoji">🧺</span>
+      <span class="price-tag">$5-10</span>
+      <h3>Canastillas 5cm × 24</h3>
+      <p>Net pots de red. Se insertan en los huecos y sostienen la planta con sustrato.</p>
+    </div>
+    <div class="material-card">
+      <span class="emoji">🪨</span>
+      <span class="price-tag">$8-12</span>
+      <h3>Perlita o arcilla</h3>
+      <p>Sustrato hidropónico. Perlita es más económica, arcilla expandida reutilizable.</p>
+    </div>
+    <div class="material-card">
+      <span class="emoji">🔝</span>
+      <span class="price-tag">$2-3</span>
+      <h3>Tapón PVC 4"</h3>
+      <p>Tapa superior de la torre. Con agujero central para la manguera de entrada.</p>
+    </div>
+    <div class="material-card">
+      <span class="emoji">🔧</span>
+      <span class="price-tag">$4-6</span>
+      <h3>Silicona + accesorios</h3>
+      <p>Sellar uniones. Codos, adaptadores y abrazaderas según tu diseño de base.</p>
+    </div>
+    <div class="material-card">
+      <span class="emoji">🌱</span>
+      <span class="price-tag">$5-8</span>
+      <h3>Nutrientes hidro A+B</h3>
+      <p>Solución nutritiva base. Marcas: Nutriflora, General Hydroponics, Flora Series.</p>
+    </div>
+  </div>
+
+  <div class="total-box">
+    <span>Costo estimado total<br><small style="font-size:10px;opacity:0.6">Sin herramientas</small></span>
+    <strong>$63 – $101 USD</strong>
+  </div>
+
+  <div class="nota">
+    <strong>💰 Dónde comprar más barato</strong>
+    Bomba y canastillas: AliExpress o MercadoLibre. PVC: ferretería local (negocia por volumen si haces varias). Nutrientes: grow shops o tiendas de acuario.
+  </div>
+</div>
+
+<!-- TAB: CONSTRUCCIÓN -->
+<div id="tab-pasos" class="content">
+  <p class="section-title">// PASO A PASO</p>
+
+  <div class="step">
+    <div class="step-num">Paso 01</div>
+    <h3>Marcar los huecos en el tubo</h3>
+    <p>Mide desde la base del tubo y marca con rotulador: 18, 36, 54, 72, 90, 108, 126 y 144 cm. En cada punto, marca 3 posiciones a 120° (usa una regla y transportador). Recuerda rotar 60° cada nivel alternado.</p>
+    <div class="tip">Enreda cinta de pintor alrededor del tubo como guía para mantener los ángulos consistentes.</div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">Paso 02</div>
+    <h3>Cortar los huecos para plantas</h3>
+    <p>Usa broca copa (sierra corona) de 5-6cm montada en taladro. Inclina el taladro 45° hacia abajo al cortar. Retira las rebabas con lija fina para no dañar las raíces.</p>
+    <div class="tip">Si no tienes broca copa: calienta un cuchillo viejo y funde el plástico lentamente. Menos preciso pero funciona.</div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">Paso 03</div>
+    <h3>Preparar la manguera interna</h3>
+    <p>Toma la manguera de ½" y perfora agujeros de 2mm a lo largo de toda su longitud, cada 18cm (alineados con cada nivel). Puedes usar una aguja calentada al rojo o un clavo fino. Tapa uno de los extremos con silicona.</p>
+    <div class="tip">Haz los agujeros en espiral, no todos del mismo lado, para que el agua se distribuya hacia todas las plantas del nivel.</div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">Paso 04</div>
+    <h3>Armar el reservorio base</h3>
+    <p>Perfora el centro del fondo del balde para pasar el tubo PVC. Sella con silicona generosa alrededor. El tubo debe quedar fijo y recto. Coloca la bomba en el fondo del balde, conectada a la manguera interna.</p>
+    <div class="tip">Prueba con agua sola antes de plantar. Deja correr 10 minutos y verifica que no haya fugas y que el agua llegue a todos los niveles.</div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">Paso 05</div>
+    <h3>Insertar manguera y cerrar la cima</h3>
+    <p>Pasa la manguera interna por dentro del tubo principal. El extremo abierto (de donde sale el agua) queda en la parte superior. Coloca el tapón PVC en la cima con un agujero para la manguera. Sella bien.</p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">Paso 06</div>
+    <h3>Plantar y llenar el reservorio</h3>
+    <p>Inserta las canastillas en cada hueco. Agrega perlita o arcilla expandida. Transplanta las plántulas. Llena el reservorio con 24-30L de agua + solución nutritiva (sigue las instrucciones del fabricante). Enciende la bomba.</p>
+    <div class="tip">Primeras 2 semanas: riega manualmente por arriba también mientras las raíces se establecen.</div>
+  </div>
+</div>
+
+<!-- TAB: RIEGO -->
+<div id="tab-riego" class="content">
+  <p class="section-title">// SISTEMA DE RIEGO INTERNO</p>
+
+  <div class="riego-diagram">
+<span class="component">[RESERVORIO 35L]</span>
+    ↕ nutrientes + agua
+<span class="component">[BOMBA 500L/h]</span>
+    <span class="flow-arrow">↑ sube agua</span>
+<span class="component">[MANGUERA INTERNA ½"]</span>
+    con agujeros c/18cm
+    <span class="flow-arrow">↓ gotea en cada nivel</span>
+<span class="component">[NIVEL 8..7..6..5..4..3..2..1]</span>
+    agua fluye por huecos
+    <span class="flow-arrow">↓ exceso cae por gravedad</span>
+<span class="component">[RESERVORIO]</span>
+    ↻ ciclo cerrado
+  </div>
+
+  <p class="section-title" style="margin-top:20px">// FRECUENCIA DE RIEGO</p>
+
+  <table class="medidas-table">
+    <thead>
+      <tr><th>Cultivo</th><th>Frecuencia</th><th>Duración</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>🥬 Lechuga</td><td class="highlight-cell">Continuo 24h</td><td>Siempre encendida</td></tr>
+      <tr><td>🌿 Albahaca / hierbas</td><td class="highlight-cell">Cada 2 horas</td><td>15-20 min</td></tr>
+      <tr><td>🍓 Fresas</td><td class="highlight-cell">7-10×/día</td><td>30 min c/vez</td></tr>
+      <tr><td>🌶️ Pimientos pequeños</td><td class="highlight-cell">Cada 3-4h</td><td>20 min</td></tr>
+      <tr><td>🥦 Espinaca / acelga</td><td class="highlight-cell">Cada 2-3h</td><td>15 min</td></tr>
+    </tbody>
+  </table>
+
+  <p class="section-title" style="margin-top:20px">// SOLUCIÓN NUTRITIVA</p>
+
+  <div class="step">
+    <div class="step-num">Regla base</div>
+    <h3>1 litro de agua por planta</h3>
+    <p>24 plantas = mínimo 24 litros en el reservorio. Cambia el agua completa cada 2 semanas. Revisa pH ideal: 5.5 a 6.5 para la mayoría de hortalizas.</p>
+    <div class="tip">Para el prototipo, empieza con nutrientes A+B de cualquier marca hidropónica local. Dosis: 2-3ml por litro de cada parte.</div>
+  </div>
+
+  <div class="nota">
+    <strong>🤖 Esto es lo que controlará tu app</strong>
+    Timer de la bomba (riego) · Sensor humedad sustrato · Sensor pH agua · Dosis de nutrientes · Alertas de nivel de agua bajo. Todo esto con un ESP32 + sensores = Fase 2 del proyecto.
+  </div>
+</div>
+
+<!-- TAB: ROADMAP -->
+<div id="tab-roadmap" class="content">
+  <p class="section-title">// ROADMAP DEL PROYECTO</p>
+
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-badge now">AHORA</span>
+      <h3>Fase 1 — Prototipo físico</h3>
+    </div>
+    <ul>
+      <li>Construir la torre de PVC según este plano</li>
+      <li>Probar sistema de riego manual primero</li>
+      <li>Plantar 3-4 tipos distintos de planta</li>
+      <li>Documentar en fotos/video todo el proceso</li>
+      <li>Validar que el agua llega uniformemente</li>
+    </ul>
+    <div class="phase-cost">💰 Inversión: $63-101 USD · ⏱ 1-2 semanas</div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-badge next">PRÓXIMO</span>
+      <h3>Fase 2 — Automatización básica</h3>
+    </div>
+    <ul>
+      <li>ESP32 (~$8) con WiFi integrado</li>
+      <li>Sensor humedad suelo (~$3 × 2)</li>
+      <li>Relay para controlar la bomba (~$3)</li>
+      <li>Sensor DHT11 temperatura/humedad aire</li>
+      <li>App básica en MIT App Inventor (gratis)</li>
+      <li>Control manual del riego desde el celular</li>
+    </ul>
+    <div class="phase-cost">💰 Inversión: $30-60 USD · ⏱ 3-6 semanas</div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-badge future">FUTURO</span>
+      <h3>Fase 3 — App inteligente (diferenciador)</h3>
+    </div>
+    <ul>
+      <li>App nativa (React Native) con perfiles por tipo de planta</li>
+      <li>Sensor pH + EC (conductividad nutrientes)</li>
+      <li>Dosificador automático de nutrientes</li>
+      <li>Alertas push al celular</li>
+      <li>Base de datos de plantas (necesidades de agua, luz, nutrientes)</li>
+      <li>Dashboard con historial de crecimiento</li>
+    </ul>
+    <div class="phase-cost">💰 Inversión: $100-200 USD · ⏱ 2-4 meses</div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-badge" style="background:#FCE4EC;color:#880E4F;">NEGOCIO</span>
+      <h3>Fase 4 — Producto y ventas</h3>
+    </div>
+    <ul>
+      <li>Costear la producción de cada unidad</li>
+      <li>Definir precio de venta (costo × 3-4x)</li>
+      <li>Primer lote de 5 unidades para testear mercado</li>
+      <li>Contenido en redes: "construí mi propia huerta inteligente"</li>
+      <li>Suscripción nutrientes mensual (ingreso recurrente)</li>
+    </ul>
+    <div class="phase-cost">💰 Meta: vender 1 unidad antes de producir 10</div>
+  </div>
+
+  <div class="nota">
+    <strong>🎯 Tu ventaja competitiva real</strong>
+    No es la huerta (cualquiera la fabrica). Es la app que controla riego y nutrientes según el tipo de planta. Eso convierte un producto de $80 en uno de $200-300. Protege esa idea.
+  </div>
+</div>
+
+<script>
+  function showTab(name) {
+    document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+
+
+</body></html>

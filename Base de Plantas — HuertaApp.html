@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<!-- saved from url=(0058)file:///C:/Users/ricar/Downloads/plantas_app_database.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base de Plantas — HuertaApp</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --verde: #3A7D44;
+    --verde-claro: #7CB87F;
+    --verde-bg: #EBF4EC;
+    --amarillo: #F5A623;
+    --rojo: #E84855;
+    --azul: #3B82F6;
+    --morado: #7C3AED;
+    --tierra: #2D1B0E;
+    --arena: #F9F6F0;
+    --gris: #6B7280;
+    --blanco: #FFFFFF;
+    --borde: #E5E7EB;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Space Grotesk', sans-serif; background: var(--arena); color: var(--tierra); }
+
+  /* HEADER */
+  header {
+    background: var(--tierra);
+    padding: 18px 20px 14px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .app-icon { font-size: 24px; }
+  header h1 { font-size: 17px; color: white; font-weight: 700; letter-spacing: -0.3px; }
+  header p { font-size: 10px; color: var(--verde-claro); font-family: 'Space Mono', monospace; }
+
+  /* SEARCH & FILTER */
+  .search-bar {
+    display: flex; gap: 8px;
+  }
+  .search-bar input {
+    flex: 1;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    background: rgba(255,255,255,0.12);
+    color: white;
+    outline: none;
+  }
+  .search-bar input::placeholder { color: rgba(255,255,255,0.45); }
+
+  .filter-row {
+    display: flex; gap: 6px; margin-top: 10px; overflow-x: auto; padding-bottom: 2px;
+  }
+  .filter-btn {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    font-size: 11px;
+    font-family: 'Space Grotesk', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .filter-btn.active {
+    background: var(--verde-claro);
+    border-color: var(--verde-claro);
+    color: white;
+  }
+
+  /* PLANT GRID */
+  .plant-grid {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .plant-card {
+    background: white;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--borde);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .plant-card:active { transform: scale(0.97); }
+
+  .plant-card-top {
+    padding: 16px 14px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .plant-emoji { font-size: 36px; margin-bottom: 8px; }
+  .plant-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .plant-latin { font-size: 10px; color: var(--gris); font-style: italic; margin-bottom: 8px; }
+
+  .difficulty-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .diff-facil { background: #D1FAE5; color: #065F46; }
+  .diff-medio { background: #FEF3C7; color: #92400E; }
+  .diff-avanzado { background: #FEE2E2; color: #991B1B; }
+
+  .plant-quick-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--borde);
+    border-top: 1px solid var(--borde);
+  }
+  .quick-stat {
+    background: white;
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .quick-stat .qs-label { font-size: 9px; color: var(--gris); text-transform: uppercase; letter-spacing: 0.3px; }
+  .quick-stat .qs-val { font-size: 12px; font-weight: 700; font-family: 'Space Mono', monospace; color: var(--verde); margin-top: 1px; }
+
+  /* DETAIL MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    backdrop-filter: blur(3px);
+  }
+  .modal-overlay.open { display: flex; align-items: flex-end; }
+
+  .modal {
+    background: var(--arena);
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    padding-bottom: 30px;
+  }
+
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: #D1D5DB;
+    border-radius: 2px;
+    margin: 12px auto 0;
+  }
+
+  .modal-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--borde);
+  }
+  .modal-emoji { font-size: 44px; }
+  .modal-header h2 { font-size: 20px; font-weight: 700; }
+  .modal-header p { font-size: 12px; color: var(--gris); font-style: italic; }
+
+  .modal-body { padding: 16px 20px; }
+
+  .section-label {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: var(--verde);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    margin-top: 20px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--verde-bg);
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  /* PARAM CARDS */
+  .params-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .param-card {
+    background: white;
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid var(--borde);
+  }
+  .param-icon { font-size: 18px; margin-bottom: 4px; }
+  .param-label { font-size: 9px; color: var(--gris); text-transform: uppercase; letter-spacing: 0.3px; }
+  .param-val { font-size: 12px; font-weight: 700; font-family: 'Space Mono', monospace; color: var(--tierra); margin-top: 2px; }
+  .param-val.good { color: var(--verde); }
+  .param-val.warn { color: var(--amarillo); }
+
+  /* NUTRIENT BARS */
+  .nutrient-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .nutrient-label { font-size: 12px; width: 100px; font-weight: 500; flex-shrink: 0; }
+  .nutrient-bar-wrap { flex: 1; height: 6px; background: #E5E7EB; border-radius: 3px; overflow: hidden; }
+  .nutrient-bar { height: 100%; border-radius: 3px; }
+  .n-alto { background: #10B981; }
+  .n-medio { background: #F59E0B; }
+  .n-bajo { background: #6B7280; }
+  .nutrient-val { font-size: 11px; font-family: 'Space Mono', monospace; color: var(--gris); width: 35px; text-align: right; flex-shrink: 0; }
+
+  /* TIMELINE */
+  .timeline { position: relative; padding-left: 20px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px; top: 6px; bottom: 6px;
+    width: 2px;
+    background: var(--verde-bg);
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 14px;
+    background: white;
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--borde);
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -17px; top: 14px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--verde);
+    border: 2px solid var(--arena);
+  }
+  .timeline-week { font-size: 10px; font-family: 'Space Mono', monospace; color: var(--verde); font-weight: 700; margin-bottom: 3px; }
+  .timeline-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .timeline-desc { font-size: 11px; color: var(--gris); line-height: 1.4; }
+
+  /* ALERTS */
+  .alert-list { display: flex; flex-direction: column; gap: 8px; }
+  .alert-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: white;
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--borde);
+    border-left: 3px solid;
+  }
+  .alert-item.danger { border-left-color: var(--rojo); }
+  .alert-item.warn { border-left-color: var(--amarillo); }
+  .alert-item.info { border-left-color: var(--azul); }
+  .alert-icon { font-size: 16px; flex-shrink: 0; }
+  .alert-text strong { font-size: 12px; display: block; margin-bottom: 2px; }
+  .alert-text p { font-size: 11px; color: var(--gris); line-height: 1.4; }
+
+  /* SENSOR CONFIG */
+  .sensor-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border: 1px solid var(--borde);
+  }
+  .sensor-info strong { font-size: 13px; display: block; }
+  .sensor-info span { font-size: 11px; color: var(--gris); }
+  .sensor-range {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--verde);
+    text-align: right;
+  }
+
+  /* CLOSE BTN */
+  .close-btn {
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 32px; height: 32px;
+    background: var(--borde);
+    border: none;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--gris);
+    grid-column: 1/-1;
+  }
+  .empty-state .big { font-size: 40px; margin-bottom: 10px; }
+
+  /* JSON export */
+  .json-section {
+    margin: 0 16px 20px;
+    background: #1E1E2E;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .json-header {
+    padding: 10px 14px;
+    background: #2A2A3E;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .json-header span { font-family: 'Space Mono', monospace; font-size: 11px; color: #7C7C9E; }
+  .copy-btn {
+    font-size: 11px;
+    padding: 4px 10px;
+    background: var(--verde);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .json-body {
+    padding: 12px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: #A9B1D6;
+    line-height: 1.7;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .json-key { color: #7DCFFF; }
+  .json-str { color: #9ECE6A; }
+  .json-num { color: #FF9E64; }
+
+  .tabs-bottom {
+    display: flex;
+    border-bottom: 1px solid var(--borde);
+    margin: 0 -20px;
+    padding: 0 20px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .tab-b {
+    padding: 8px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    color: var(--gris);
+    margin-bottom: -1px;
+  }
+  .tab-b.active { color: var(--verde); border-bottom-color: var(--verde); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <span class="app-icon">🌿</span>
+    <div>
+      <h1>Base de Plantas</h1>
+      <p>DATOS PARA LA APP · 12 ESPECIES · TORRE VERTICAL</p>
+    </div>
+  </div>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Buscar planta..." oninput="filterPlants()">
+  </div>
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="setFilter(&#39;todas&#39;, this)">Todas</button>
+    <button class="filter-btn" onclick="setFilter(&#39;hoja&#39;, this)">🥬 Hojas</button>
+    <button class="filter-btn" onclick="setFilter(&#39;hierba&#39;, this)">🌿 Hierbas</button>
+    <button class="filter-btn" onclick="setFilter(&#39;fruto&#39;, this)">🍓 Frutos</button>
+    <button class="filter-btn" onclick="setFilter(&#39;facil&#39;, this)">⭐ Fáciles</button>
+  </div>
+</header>
+
+<div class="plant-grid" id="plantGrid">
+    <div class="plant-card" onclick="openModal(&#39;lechuga&#39;)">
+      <div class="plant-card-top">
+        <span class="plant-emoji">🥬</span>
+        <div class="plant-name">Lechuga</div>
+        <div class="plant-latin">Lactuca sativa</div>
+        <span class="difficulty-badge diff-facil">Fácil</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">5.5–6.5</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">30d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">1.2–1.8</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">14–16h</div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="plant-card" onclick="openModal(&#39;albahaca&#39;)">
+      <div class="plant-card-top">
+        <span class="plant-emoji">🌿</span>
+        <div class="plant-name">Albahaca</div>
+        <div class="plant-latin">Ocimum basilicum</div>
+        <span class="difficulty-badge diff-facil">Fácil</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">5.5–6.5</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">25d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">1.0–1.6</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">14–16h</div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="plant-card" onclick="openModal(&#39;espinaca&#39;)">
+      <div class="plant-card-top">
+        <span class="plant-emoji">🍃</span>
+        <div class="plant-name">Espinaca</div>
+        <div class="plant-latin">Spinacia oleracea</div>
+        <span class="difficulty-badge diff-facil">Fácil</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">5.5–6.6</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">30d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">1.2–1.8</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">12–14h</div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="plant-card" onclick="openModal(&#39;fresa&#39;)">
+      <div class="plant-card-top">
+        <span class="plant-emoji">🍓</span>
+        <div class="plant-name">Fresa</div>
+        <div class="plant-latin">Fragaria × ananassa</div>
+        <span class="difficulty-badge diff-medio">Medio</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">5.5–6.5</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">90d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">1.2–1.8</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">14–16h</div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="plant-card" onclick="openModal(&#39;cilantro&#39;)">
+      <div class="plant-card-top">
+        <span class="plant-emoji">🌱</span>
+        <div class="plant-name">Cilantro</div>
+        <div class="plant-latin">Coriandrum sativum</div>
+        <span class="difficulty-badge diff-facil">Fácil</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">5.5–6.5</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">30d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">1.0–1.4</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">12–14h</div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="plant-card" onclick="openModal(&#39;rucula&#39;)">
+      <div class="plant-card-top">
+        <span class="plant-emoji">🍀</span>
+        <div class="plant-name">Rúcula</div>
+        <div class="plant-latin">Eruca vesicaria</div>
+        <span class="difficulty-badge diff-facil">Fácil</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">6.0–7.0</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">25d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">0.8–1.6</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">10–14h</div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="plant-card" onclick="openModal(&#39;menta&#39;)">
+      <div class="plant-card-top">
+        <span class="plant-emoji">🍵</span>
+        <div class="plant-name">Menta</div>
+        <div class="plant-latin">Mentha spicata</div>
+        <span class="difficulty-badge diff-facil">Fácil</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">5.5–6.0</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">30d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">1.2–2.0</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">12–16h</div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="plant-card" onclick="openModal(&#39;acelga&#39;)">
+      <div class="plant-card-top">
+        <span class="plant-emoji">🥗</span>
+        <div class="plant-name">Acelga</div>
+        <div class="plant-latin">Beta vulgaris var. cicla</div>
+        <span class="difficulty-badge diff-facil">Fácil</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">6.0–7.0</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">45d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">1.8–2.3</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">12–16h</div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="plant-card" onclick="openModal(&#39;perejil&#39;)">
+      <div class="plant-card-top">
+        <span class="plant-emoji">🌾</span>
+        <div class="plant-name">Perejil</div>
+        <div class="plant-latin">Petroselinum crispum</div>
+        <span class="difficulty-badge diff-medio">Medio</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">5.5–6.0</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">70d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">0.8–1.8</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">12–16h</div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="plant-card" onclick="openModal(&#39;tomate_cherry&#39;)">
+      <div class="plant-card-top">
+        <span class="plant-emoji">🍅</span>
+        <div class="plant-name">Tomate Cherry</div>
+        <div class="plant-latin">Solanum lycopersicum var.</div>
+        <span class="difficulty-badge diff-avanzado">Avanzado</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">5.5–6.5</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">60d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">2.0–4.0</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">16–18h</div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="plant-card" onclick="openModal(&#39;kale&#39;)">
+      <div class="plant-card-top">
+        <span class="plant-emoji">🥦</span>
+        <div class="plant-name">Kale / Col Rizada</div>
+        <div class="plant-latin">Brassica oleracea var. sabellica</div>
+        <span class="difficulty-badge diff-medio">Medio</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">5.5–6.5</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">55d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">1.25–1.75</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">12–16h</div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="plant-card" onclick="openModal(&#39;pepino&#39;)">
+      <div class="plant-card-top">
+        <span class="plant-emoji">🥒</span>
+        <div class="plant-name">Pepino</div>
+        <div class="plant-latin">Cucumis sativus</div>
+        <span class="difficulty-badge diff-avanzado">Avanzado</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">5.5–6.0</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">50d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">1.7–2.5</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">14–18h</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- JSON export section -->
+<div class="json-section">
+  <div class="json-header">
+    <span>// plants_database.json — estructura para la app</span>
+    <button class="copy-btn" onclick="copyJSON()">Copiar JSON</button>
+  </div>
+  <div class="json-body" id="jsonPreview">[
+  {
+    <span class="json-key">"id"</span>: <span class="json-str">"lechuga"</span>,
+    <span class="json-key">"name"</span>: <span class="json-str">"Lechuga"</span>,
+    <span class="json-key">"emoji"</span>: <span class="json-str">"🥬"</span>,
+    <span class="json-key">"category"</span>: <span class="json-str">"hoja"</span>,
+    <span class="json-key">"difficulty"</span>: <span class="json-str">"facil"</span>,
+    <span class="json-key">"params"</span>: {
+      <span class="json-key">"ph"</span>: <span class="json-str">"5.5–6.5"</span>,
+      <span class="json-key">"ec"</span>: <span class="json-str">"1.2–1.8"</span>,
+      <span class="json-key">"temp"</span>: <span class="json-str">"13–21°C"</span>,
+      <span class="json-key">"luz"</span>: <span class="json-str">"14–16h"</span>,
+      <span class="json-key">"humedad"</span>: <span class="json-str">"60–70%"</span>,
+      <span class="json-key">"riego"</span>: <span class="json-str">"Continuo"</span>
+    },
+    <span class="json-key">"harvestDays"</span>: <span class="json-str">"30–40 días"</span>,
+    <span class="json-key">"nutrients"</span>: {
+      <span class="json-key">"N"</span>: <span class="json-num">85</span>,
+      <span class="json-key">"P"</span>: <span class="json-num">40</span>,
+      <span class="json-key">"K"</span>: <span class="json-num">60</span>,
+      <span class="json-key">"Ca"</span>: <span class="json-num">70</span>,
+      <span class="json-key">"Mg"</span>: <span class="json-num">35</span>
+    },
+    <span class="json-key">"alertsCount"</span>: <span class="json-num">3</span>,
+    <span class="json-key">"sensorsRequired"</span>: [
+      "Sensor pH",
+      "Sensor EC",
+      "Temperatura agua",
+      "Luz (lux)"
+    ]
+  },
+  {
+    <span class="json-key">"id"</span>: <span class="json-str">"albahaca"</span>,
+    <span class="json-key">"name"</span>: <span class="json-str">"Albahaca"</span>,
+    <span class="json-key">"emoji"</span>: <span class="json-str">"🌿"</span>,
+    <span class="json-key">"category"</span>: <span class="json-str">"hierba"</span>,
+    <span class="json-key">"difficulty"</span>: <span class="json-str">"facil"</span>,
+    <span class="json-key">"params"</span>: {
+      <span class="json-key">"ph"</span>: <span class="json-str">"5.5–6.5"</span>,
+      <span class="json-key">"ec"</span>: <span class="json-str">"1.0–1.6"</span>,
+      <span class="json-key">"temp"</span>: <span class="json-str">"20–30°C"</span>,
+      <span class="json-key">"luz"</span>: <span class="json-str">"14–16h"</span>,
+      <span class="json-key">"humedad"</span>: <span class="json-str">"60–70%"</span>,
+      <span class="json-key">"riego"</span>: <span class="json-str">"Cada 2h"</span>
+    },
+    <span class="json-key">"harvestDays"</span>: <span class="json-str">"25–35 días"</span>,
+    <span class="json-key">"nutrients"</span>: {
+      <span class="json-key">"N"</span>: <span class="json-num">90</span>,
+      <span class="json-key">"P"</span>: <span class="json-num">45</span>,
+      <span class="json-key">"K"</span>: <span class="json-num">55</span>,
+      <span class="json-key">"Ca"</span>: <span class="json-num">80</span>,
+      <span class="json-key">"Mg"</span>: <span class="json-num">40</span>
+    },
+    <span class="json-key">"alertsCount"</span>: <span class="json-num">3</span>,
+    <span class="json-key">"sensorsRequired"</span>: [
+      "Temperatura aire",
+      "Sensor pH",
+      "Sensor EC",
+      "Humedad relativa"
+    ]
+  }
+]
+<span style="color:#6B7280">// ... + 10 plantas más</span></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalContent">
+    <div class="modal-handle"></div>
+    <div style="position:relative">
+      <button class="close-btn" onclick="closeModalDirect()">✕</button>
+      <div class="modal-header" id="modalHeader"></div>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const plants = [
+  {
+    id: "lechuga",
+    name: "Lechuga",
+    latin: "Lactuca sativa",
+    emoji: "🥬",
+    category: "hoja",
+    difficulty: "facil",
+    diffLabel: "Fácil",
+    description: "La reina de la hidroponía. Crecimiento ultrarrápido, ideal para comenzar y para la primera cosecha del cliente.",
+    params: {
+      ph: "5.5–6.5",
+      ec: "1.2–1.8",
+      temp: "13–21°C",
+      luz: "14–16h",
+      humedad: "60–70%",
+      riego: "Continuo"
+    },
+    harvestDays: "30–40 días",
+    nutrients: { N: 85, P: 40, K: 60, Ca: 70, Mg: 35 },
+    timeline: [
+      { week: "Días 1–5", title: "Germinación", desc: "En esponja o lana de roca. Mantener húmedo, sin nutrientes aún. Temperatura 20°C." },
+      { week: "Días 6–14", title: "Plántula", desc: "Trasplantar a canastilla cuando raíces tienen 2-3cm. Iniciar solución nutritiva al 50%." },
+      { week: "Días 15–25", title: "Crecimiento activo", desc: "Nutrientes al 100%. Riego continuo. Revisar pH cada 2 días." },
+      { week: "Días 26–40", title: "Cosecha", desc: "Cosechar hojas externas primero para prolongar producción. Nunca cortar el cogollo." }
+    ],
+    alerts: [
+      { type: "danger", icon: "🌡️", title: "Temperatura alta", desc: "Más de 26°C causa amargura y florece prematuramente. Monitorear sensor de temperatura." },
+      { type: "warn", icon: "💧", title: "pH fuera de rango", desc: "pH alto bloquea absorción de hierro. Ajustar con ácido fosfórico o pH Down." },
+      { type: "info", icon: "🌊", title: "Consejo de agua", desc: "Cambiar solución nutritiva completa cada 2 semanas para evitar acumulación de sales." }
+    ],
+    sensors: [
+      { name: "Sensor pH", desc: "Verificar cada 2 días", range: "5.5–6.5" },
+      { name: "Sensor EC", desc: "Concentración nutrientes", range: "1.2–1.8 mS" },
+      { name: "Temperatura agua", desc: "Temperatura solución", range: "18–22°C" },
+      { name: "Luz (lux)", desc: "Horas luz diarias", range: "14–16h" }
+    ],
+    tip: "Ideales para ventas: 'lechuga mantecosa', 'romana' y 'lollo rossa'. Maduran en 30 días = 12 cosechas al año por planta."
+  },
+  {
+    id: "albahaca",
+    name: "Albahaca",
+    latin: "Ocimum basilicum",
+    emoji: "🌿",
+    category: "hierba",
+    difficulty: "facil",
+    diffLabel: "Fácil",
+    description: "Hierba aromática de alto valor comercial. Crecimiento constante si se poda correctamente.",
+    params: {
+      ph: "5.5–6.5",
+      ec: "1.0–1.6",
+      temp: "20–30°C",
+      luz: "14–16h",
+      humedad: "60–70%",
+      riego: "Cada 2h"
+    },
+    harvestDays: "25–35 días",
+    nutrients: { N: 90, P: 45, K: 55, Ca: 80, Mg: 40 },
+    timeline: [
+      { week: "Días 1–7", title: "Germinación", desc: "Semillas en esponja húmeda. Temperatura mínima 20°C. Germinan en 4-7 días." },
+      { week: "Días 8–20", title: "Desarrollo inicial", desc: "Trasplantar con 4 hojas verdaderas. Iniciar nutrientes nitrogenados." },
+      { week: "Días 21–35", title: "Primera cosecha", desc: "Pinzar la punta principal (topping) para estimular ramas laterales." },
+      { week: "Semanas 5+", title: "Producción continua", desc: "Cosechar semanalmente las hojas superiores. Una planta rinde meses." }
+    ],
+    alerts: [
+      { type: "danger", icon: "🌸", title: "Floración prematura", desc: "Si aparecen flores, cortar INMEDIATAMENTE. Las hojas se amargan y la planta muere." },
+      { type: "warn", icon: "🌡️", title: "Temperatura baja", desc: "Bajo 15°C el crecimiento se detiene y puede morir. Sensor temperatura crítico." },
+      { type: "info", icon: "✂️", title: "Poda frecuente", desc: "Podar cada 7–10 días duplica la producción. Notificación app recomendada." }
+    ],
+    sensors: [
+      { name: "Temperatura aire", desc: "Nunca < 15°C", range: "20–30°C" },
+      { name: "Sensor pH", desc: "Revisar 2x/semana", range: "5.5–6.5" },
+      { name: "Sensor EC", desc: "Rico en nitrógeno", range: "1.0–1.6 mS" },
+      { name: "Humedad relativa", desc: "Evitar hongos", range: "60–70%" }
+    ],
+    tip: "Valor comercial alto. 100g de albahaca fresca = $2-5 USD. Una planta bien manejada produce 200-400g/mes."
+  },
+  {
+    id: "espinaca",
+    name: "Espinaca",
+    latin: "Spinacia oleracea",
+    emoji: "🍃",
+    category: "hoja",
+    difficulty: "facil",
+    diffLabel: "Fácil",
+    description: "Resistente a cambios de temperatura. Rica en hierro y muy demandada. Cosecha en 30–45 días.",
+    params: {
+      ph: "5.5–6.6",
+      ec: "1.2–1.8",
+      temp: "10–20°C",
+      luz: "12–14h",
+      humedad: "60–75%",
+      riego: "Cada 3h"
+    },
+    harvestDays: "30–45 días",
+    nutrients: { N: 80, P: 35, K: 65, Ca: 75, Mg: 50 },
+    timeline: [
+      { week: "Días 1–6", title: "Germinación", desc: "Prefiere temperaturas frescas (15°C). Semillas en esponja o sustrato húmedo." },
+      { week: "Días 7–20", title: "Plántula", desc: "4-6 hojas antes de trasplantar. Muy tolerante a bajas temperaturas." },
+      { week: "Días 21–40", title: "Crecimiento", desc: "Riego cada 3 horas. Monitorear nitrógeno para hojas oscuras y sanas." },
+      { week: "Días 40–45", title: "Cosecha", desc: "Cosechar hojas externas. El corazón sigue produciendo por semanas." }
+    ],
+    alerts: [
+      { type: "danger", icon: "☀️", title: "Exceso de calor", desc: "Más de 25°C causa floración (bolting). Planta termina su ciclo prematuramente." },
+      { type: "warn", icon: "🟡", title: "Hojas amarillas", desc: "Indica deficiencia de nitrógeno. Aumentar concentración EC o cambiar solución." },
+      { type: "info", icon: "❄️", title: "Tolera frío", desc: "Una de las pocas hortalizas que resiste hasta 5°C. Ideal para climas variables." }
+    ],
+    sensors: [
+      { name: "Temperatura", desc: "Mejor en fresco", range: "10–20°C" },
+      { name: "Sensor pH", desc: "Rango amplio", range: "5.5–6.6" },
+      { name: "Sensor EC", desc: "Nutrición moderada", range: "1.2–1.8 mS" },
+      { name: "Luz", desc: "Menos que otras", range: "12–14h" }
+    ],
+    tip: "Perfecta para clientes que quieren resultados rápidos. Combinarla con lechuga en la misma torre."
+  },
+  {
+    id: "fresa",
+    name: "Fresa",
+    latin: "Fragaria × ananassa",
+    emoji: "🍓",
+    category: "fruto",
+    difficulty: "medio",
+    diffLabel: "Medio",
+    description: "Fruto estrella para ventas. Alta rentabilidad. Requiere más atención pero el resultado vale la pena.",
+    params: {
+      ph: "5.5–6.5",
+      ec: "1.2–1.8",
+      temp: "15–25°C",
+      luz: "14–16h",
+      humedad: "65–75%",
+      riego: "Cada 1h"
+    },
+    harvestDays: "90–120 días",
+    nutrients: { N: 60, P: 70, K: 90, Ca: 80, Mg: 55 },
+    timeline: [
+      { week: "Semanas 1–2", title: "Establecimiento", desc: "Usar plantines (no semillas). Aclimatar al sistema hidropónico gradualmente." },
+      { week: "Semanas 3–6", title: "Desarrollo vegetativo", desc: "Priorizar crecimiento foliar. Nutrientes equilibrados N-P-K." },
+      { week: "Semanas 7–10", title: "Floración", desc: "Aumentar fósforo y potasio. Reducir nitrógeno. 14–16h luz obligatorias." },
+      { week: "Semanas 11–16", title: "Fructificación", desc: "Polinización manual con pincel suave si es interior. Primera cosecha." },
+      { week: "Continuo", title: "Producción", desc: "Una planta bien cuidada produce fresas por 2–3 años consecutivos." }
+    ],
+    alerts: [
+      { type: "danger", icon: "🍄", title: "Botrytis (hongo gris)", desc: "La humedad alta mata la fresa. Mantener ventilación y humedad bajo 75%." },
+      { type: "danger", icon: "🔴", title: "Deficiencia de potasio", desc: "Frutos pequeños y sin sabor. Monitorear EC y ajustar solución rica en K." },
+      { type: "warn", icon: "🌸", title: "Polinización interior", desc: "Sin abejas: usar pincel pequeño para transferir polen entre flores." },
+      { type: "info", icon: "✂️", title: "Quitar estolones", desc: "Cortar los 'runners' (tallos rastreros) para concentrar energía en frutos." }
+    ],
+    sensors: [
+      { name: "Sensor pH", desc: "Crítico para fresas", range: "5.5–6.5" },
+      { name: "Sensor EC", desc: "Alto en potasio", range: "1.2–1.8 mS" },
+      { name: "Humedad relativa", desc: "Evitar hongos", range: "65–75%" },
+      { name: "Temperatura", desc: "Floración óptima", range: "15–25°C" }
+    ],
+    tip: "Premium: fresas hidropónicas se venden 2–3× más caras que las de suelo. Excelente para diferenciarte."
+  },
+  {
+    id: "cilantro",
+    name: "Cilantro",
+    latin: "Coriandrum sativum",
+    emoji: "🌱",
+    category: "hierba",
+    difficulty: "facil",
+    diffLabel: "Fácil",
+    description: "Hierba aromática de ciclo muy corto. Produce cada 30–40 días con múltiples cosechas.",
+    params: {
+      ph: "5.5–6.5",
+      ec: "1.0–1.4",
+      temp: "15–25°C",
+      luz: "12–14h",
+      humedad: "50–70%",
+      riego: "Cada 2h"
+    },
+    harvestDays: "30–40 días",
+    nutrients: { N: 70, P: 30, K: 45, Ca: 40, Mg: 25 },
+    timeline: [
+      { week: "Días 1–7", title: "Germinación", desc: "Remojar semillas 24h antes. Germinan mejor partidas en dos mitades." },
+      { week: "Días 8–20", title: "Desarrollo", desc: "Pocas necesidades nutricionales. Solución diluida al 50%." },
+      { week: "Días 21–35", title: "Cosecha progresiva", desc: "Cosechar ramas externas. La planta sigue brotando desde el centro." },
+      { week: "Días 35–45", title: "Renovación", desc: "Cuando florece, termina. Sembrar nueva tanda escalonada cada 15 días." }
+    ],
+    alerts: [
+      { type: "danger", icon: "🌸", title: "Floración rápida en calor", desc: "Más de 27°C dispara floración. El cilantro se amarga. Monitorear temperatura." },
+      { type: "info", icon: "📅", title: "Siembra escalonada", desc: "Sembrar una nueva planta cada 2 semanas para cosecha continua sin interrupciones." }
+    ],
+    sensors: [
+      { name: "Temperatura", desc: "Sensible al calor", range: "15–25°C" },
+      { name: "Sensor pH", desc: "Amplio rango", range: "5.5–6.5" },
+      { name: "Sensor EC", desc: "Bajos nutrientes", range: "1.0–1.4 mS" }
+    ],
+    tip: "Muy fácil y barato de producir. Excelente para ofrecer en kits de inicio con lechugas y albahaca."
+  },
+  {
+    id: "rucula",
+    name: "Rúcula",
+    latin: "Eruca vesicaria",
+    emoji: "🍀",
+    category: "hoja",
+    difficulty: "facil",
+    diffLabel: "Fácil",
+    description: "Hoja gourmet de sabor picante. Una de las más rápidas: lista en 25–30 días. Alto valor en restaurantes.",
+    params: {
+      ph: "6.0–7.0",
+      ec: "0.8–1.6",
+      temp: "10–22°C",
+      luz: "10–14h",
+      humedad: "50–65%",
+      riego: "Cada 3h"
+    },
+    harvestDays: "25–30 días",
+    nutrients: { N: 65, P: 25, K: 50, Ca: 45, Mg: 30 },
+    timeline: [
+      { week: "Días 1–4", title: "Germinación ultrarrápida", desc: "De las más rápidas: brota en 3-4 días. Siembra directa en esponja." },
+      { week: "Días 5–18", title: "Crecimiento", desc: "Necesita poco cuidado. Tolera pH más alto que otras hortalizas." },
+      { week: "Días 19–30", title: "Cosecha", desc: "Cosechar antes de que tenga más de 8 hojas. Más hojas = más amarga." }
+    ],
+    alerts: [
+      { type: "warn", icon: "🌡️", title: "Sabor muy picante", desc: "El calor y el estrés hídrico aumentan el picante. Puede afectar la calidad del producto." },
+      { type: "info", icon: "🍽️", title: "Mercado gourmet", desc: "La rúcula fresca hidropónica es muy buscada por restaurantes y chefs." }
+    ],
+    sensors: [
+      { name: "Temperatura", desc: "Fresca preferida", range: "10–22°C" },
+      { name: "Sensor pH", desc: "Acepta pH mayor", range: "6.0–7.0" },
+      { name: "Sensor EC", desc: "Pocos nutrientes", range: "0.8–1.6 mS" }
+    ],
+    tip: "La cosecha más rápida de todas. Perfecta para demostrarle al cliente resultados rápidos en la primera semana."
+  },
+  {
+    id: "menta",
+    name: "Menta",
+    latin: "Mentha spicata",
+    emoji: "🍵",
+    category: "hierba",
+    difficulty: "facil",
+    diffLabel: "Fácil",
+    description: "Hierba perenne de crecimiento agresivo. Una vez establecida, produce indefinidamente con mínimo cuidado.",
+    params: {
+      ph: "5.5–6.0",
+      ec: "1.2–2.0",
+      temp: "18–25°C",
+      luz: "12–16h",
+      humedad: "60–80%",
+      riego: "Cada 2h"
+    },
+    harvestDays: "30–45 días",
+    nutrients: { N: 75, P: 35, K: 60, Ca: 50, Mg: 40 },
+    timeline: [
+      { week: "Semanas 1–2", title: "Enraizamiento", desc: "Mejor desde esquejes (no semillas). Rápido enraizamiento en agua simple." },
+      { week: "Semanas 3–4", title: "Establecimiento", desc: "Comenzar nutrientes completos. Crece muy rápido una vez establecida." },
+      { week: "Semana 5+", title: "Cosecha continua", desc: "Cosechar 1/3 de la planta máximo cada vez. Regresa en 1–2 semanas." }
+    ],
+    alerts: [
+      { type: "warn", icon: "🌊", title: "Crecimiento invasivo", desc: "La menta puede dominar el espacio. En torres verticales, podar agresivamente." },
+      { type: "info", icon: "♾️", title: "Planta perenne", desc: "No muere por temporada. Un módulo de menta puede durar 2–3 años activo." }
+    ],
+    sensors: [
+      { name: "Sensor pH", desc: "Rango ácido", range: "5.5–6.0" },
+      { name: "Sensor EC", desc: "Nutrición media-alta", range: "1.2–2.0 mS" },
+      { name: "Temperatura", desc: "Ambiente cálido", range: "18–25°C" }
+    ],
+    tip: "Excelente para el módulo de hierbas. El aroma es un diferenciador visual y sensorial para mostrar el producto."
+  },
+  {
+    id: "acelga",
+    name: "Acelga",
+    latin: "Beta vulgaris var. cicla",
+    emoji: "🥗",
+    category: "hoja",
+    difficulty: "facil",
+    diffLabel: "Fácil",
+    description: "Resistente y muy productiva. Sus tallos de colores (roja, amarilla, blanca) son muy decorativos para la torre.",
+    params: {
+      ph: "6.0–7.0",
+      ec: "1.8–2.3",
+      temp: "10–24°C",
+      luz: "12–16h",
+      humedad: "60–75%",
+      riego: "Cada 3h"
+    },
+    harvestDays: "45–60 días",
+    nutrients: { N: 70, P: 40, K: 70, Ca: 80, Mg: 45 },
+    timeline: [
+      { week: "Días 1–7", title: "Germinación", desc: "Semillas grandes, germinan bien. Temperatura amplia aceptada." },
+      { week: "Días 8–25", title: "Plántula robusta", desc: "Crecimiento vigoroso. Pocas plagas en hidroponía." },
+      { week: "Días 26–50", title: "Producción", desc: "Cosechar hojas externas dejando mínimo 4 hojas internas." }
+    ],
+    alerts: [
+      { type: "info", icon: "🎨", title: "Variedad decorativa", desc: "La acelga arcoíris (Swiss Chard Rainbow) es muy llamativa para videos y fotos de la torre." }
+    ],
+    sensors: [
+      { name: "Sensor pH", desc: "Acepta pH alto", range: "6.0–7.0" },
+      { name: "Sensor EC", desc: "Mayor concentración", range: "1.8–2.3 mS" },
+      { name: "Temperatura", desc: "Muy tolerante", range: "10–24°C" }
+    ],
+    tip: "La acelga arcoíris hace la torre mucho más atractiva visualmente. Ideal para fotos de marketing."
+  },
+  {
+    id: "perejil",
+    name: "Perejil",
+    latin: "Petroselinum crispum",
+    emoji: "🌾",
+    category: "hierba",
+    difficulty: "medio",
+    diffLabel: "Medio",
+    description: "Hierba de alta demanda culinaria. Germinación lenta pero producción duradera.",
+    params: {
+      ph: "5.5–6.0",
+      ec: "0.8–1.8",
+      temp: "15–25°C",
+      luz: "12–16h",
+      humedad: "60–70%",
+      riego: "Cada 2h"
+    },
+    harvestDays: "70–90 días",
+    nutrients: { N: 75, P: 30, K: 50, Ca: 60, Mg: 35 },
+    timeline: [
+      { week: "Días 1–14", title: "Germinación lenta", desc: "El perejil es famoso por tardar. Remojar semillas 24h antes. Paciencia." },
+      { week: "Días 15–40", title: "Desarrollo lento", desc: "Crecimiento pausado al inicio. No desesperar ni exceder nutrientes." },
+      { week: "Días 41–80", title: "Aceleración", desc: "Una vez establecido, el crecimiento se acelera notablemente." },
+      { week: "Días 80+", title: "Cosecha continua", desc: "Producción continua por meses. Bienal (puede durar 2 años)." }
+    ],
+    alerts: [
+      { type: "warn", icon: "⏰", title: "Germinación muy lenta", desc: "Puede tardar 2–3 semanas. Notificar al cliente para gestionar expectativas." },
+      { type: "info", icon: "💪", title: "Muy duradero", desc: "Una vez establecido, dura meses o años. Alta rentabilidad a largo plazo." }
+    ],
+    sensors: [
+      { name: "Sensor pH", desc: "Ligeramente ácido", range: "5.5–6.0" },
+      { name: "Sensor EC", desc: "Nutrición baja-media", range: "0.8–1.8 mS" },
+      { name: "Temperatura", desc: "Ambiente templado", range: "15–25°C" }
+    ],
+    tip: "Ofrecer al cliente el módulo de perejil como 'inversión a largo plazo': poca atención, muchos meses de cosecha."
+  },
+  {
+    id: "tomate_cherry",
+    name: "Tomate Cherry",
+    latin: "Solanum lycopersicum var.",
+    emoji: "🍅",
+    category: "fruto",
+    difficulty: "avanzado",
+    diffLabel: "Avanzado",
+    description: "El fruto más rentable en hidroponía. Requiere soporte, control preciso y polinización. Resultado espectacular.",
+    params: {
+      ph: "5.5–6.5",
+      ec: "2.0–4.0",
+      temp: "20–28°C",
+      luz: "16–18h",
+      humedad: "65–75%",
+      riego: "Cada 1h"
+    },
+    harvestDays: "60–90 días",
+    nutrients: { N: 65, P: 80, K: 95, Ca: 90, Mg: 60 },
+    timeline: [
+      { week: "Semanas 1–2", title: "Germinación", desc: "En esponja a 24°C. Trasplantar con 2 pares de hojas verdaderas." },
+      { week: "Semanas 3–5", title: "Vegetativo", desc: "Crecer vertical. Instalar soporte/tutores. Nutrientes altos en N." },
+      { week: "Semanas 6–8", title: "Floración", desc: "Cambiar a nutrientes altos en P y K. Agitar suavemente para polinizar." },
+      { week: "Semanas 9–13", title: "Fructificación", desc: "Los racimos se forman. Mantener Ca alto para evitar pudrición apical." },
+      { week: "Semanas 13+", title: "Cosecha continua", desc: "Cosechar cuando 70% rojo. Una planta bien manejada produce por meses." }
+    ],
+    alerts: [
+      { type: "danger", icon: "🟫", title: "Pudrición apical", desc: "Mancha negra en el fruto por deficiencia de calcio. Monitorear Ca en solución." },
+      { type: "danger", icon: "🕷️", title: "Araña roja", desc: "Plaga común en interior. Revisar hojas semanalmente. Humedad alta previene." },
+      { type: "warn", icon: "🌸", title: "Polinización manual", desc: "Sin viento ni insectos: vibrar las flores con electric toothbrush o pincel." },
+      { type: "info", icon: "📏", title: "Soporte obligatorio", desc: "La planta puede superar 1.5m. Asegurar a la estructura de la torre." }
+    ],
+    sensors: [
+      { name: "Sensor pH", desc: "Control preciso", range: "5.5–6.5" },
+      { name: "Sensor EC", desc: "Alta concentración", range: "2.0–4.0 mS" },
+      { name: "Temperatura", desc: "Cálido para florecer", range: "20–28°C" },
+      { name: "Humedad", desc: "Evitar hongos", range: "65–75%" }
+    ],
+    tip: "Los tomates cherry hidropónicos pueden ser 3× más dulces que los de tierra. Un argumento de venta poderoso."
+  },
+  {
+    id: "kale",
+    name: "Kale / Col Rizada",
+    latin: "Brassica oleracea var. sabellica",
+    emoji: "🥦",
+    category: "hoja",
+    difficulty: "medio",
+    diffLabel: "Medio",
+    description: "Superfood de alto valor nutricional. Muy llamativa visualmente. Crece lento pero produce mucho volumen.",
+    params: {
+      ph: "5.5–6.5",
+      ec: "1.25–1.75",
+      temp: "13–21°C",
+      luz: "12–16h",
+      humedad: "60–70%",
+      riego: "Cada 3h"
+    },
+    harvestDays: "55–75 días",
+    nutrients: { N: 80, P: 45, K: 70, Ca: 85, Mg: 55 },
+    timeline: [
+      { week: "Días 1–7", title: "Germinación", desc: "Rápida: 4–6 días. Temperatura ideal 18–22°C." },
+      { week: "Días 8–30", title: "Desarrollo foliar", desc: "Crecimiento constante. Hojas rizadas características aparecen en semana 3." },
+      { week: "Días 31–60", title: "Maduración", desc: "El frío mejora el sabor (menos amargo). Excelente en invierno." },
+      { week: "Días 60+", title: "Cosecha continua", desc: "Siempre de afuera hacia adentro. La planta puede durar meses." }
+    ],
+    alerts: [
+      { type: "warn", icon: "🐛", title: "Sensible a plagas", desc: "Pulgones y mariposa blanca son comunes. Inspección visual semanal importante." },
+      { type: "info", icon: "❄️", title: "Frío mejora sabor", desc: "Una helada suave convierte el almidón en azúcar. Sabor más dulce y suave." }
+    ],
+    sensors: [
+      { name: "Temperatura", desc: "Prefiere fresco", range: "13–21°C" },
+      { name: "Sensor pH", desc: "Rango moderado", range: "5.5–6.5" },
+      { name: "Sensor EC", desc: "Nutrición alta en Ca", range: "1.25–1.75 mS" }
+    ],
+    tip: "El kale es tendencia en mercados premium y juguerías. Precio de venta alto, especialmente orgánico."
+  },
+  {
+    id: "pepino",
+    name: "Pepino",
+    latin: "Cucumis sativus",
+    emoji: "🥒",
+    category: "fruto",
+    difficulty: "avanzado",
+    diffLabel: "Avanzado",
+    description: "Fruto de alta producción en hidroponía. Crece rápido pero necesita soporte y control de humedad.",
+    params: {
+      ph: "5.5–6.0",
+      ec: "1.7–2.5",
+      temp: "22–28°C",
+      luz: "14–18h",
+      humedad: "70–80%",
+      riego: "Cada 1h"
+    },
+    harvestDays: "50–70 días",
+    nutrients: { N: 70, P: 65, K: 85, Ca: 75, Mg: 50 },
+    timeline: [
+      { week: "Días 1–5", title: "Germinación rápida", desc: "Muy fácil de germinar. 22–25°C óptimo. Brotan en 3-5 días." },
+      { week: "Días 6–25", title: "Crecimiento vigoroso", desc: "Planta de crecimiento agresivo. Instalar soporte inmediatamente." },
+      { week: "Días 26–45", title: "Floración y polinización", desc: "Flor amarilla visible. Polinizar manualmente en interiores." },
+      { week: "Días 50–70", title: "Cosecha", desc: "Cosechar pepinos jóvenes (15cm) para estimular producción continua." }
+    ],
+    alerts: [
+      { type: "danger", icon: "💧", title: "Oídio (hongo blanco)", desc: "La humedad alta causa hongo blanco en hojas. Mantener buena ventilación." },
+      { type: "warn", icon: "📏", title: "Soporte fuerte", desc: "El pepino crece mucho y pesa. Necesita estructura resistente en la torre." }
+    ],
+    sensors: [
+      { name: "Temperatura", desc: "Necesita calor", range: "22–28°C" },
+      { name: "Sensor pH", desc: "Ligeramente ácido", range: "5.5–6.0" },
+      { name: "Sensor EC", desc: "Nutrición media-alta", range: "1.7–2.5 mS" },
+      { name: "Humedad", desc: "Ventilación clave", range: "70–80%" }
+    ],
+    tip: "El pepino hidropónico crece 30–50% más rápido que en tierra. Ideal para demostrar la tecnología al cliente."
+  }
+];
+
+// Global state
+let activeFilter = 'todas';
+let activeSearch = '';
+
+function renderGrid() {
+  const grid = document.getElementById('plantGrid');
+  const filtered = plants.filter(p => {
+    const matchFilter = activeFilter === 'todas' || p.category === activeFilter || (activeFilter === 'facil' && p.difficulty === 'facil');
+    const matchSearch = p.name.toLowerCase().includes(activeSearch.toLowerCase()) ||
+                        p.latin.toLowerCase().includes(activeSearch.toLowerCase());
+    return matchFilter && matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="empty-state"><div class="big">🔍</div><p>No se encontraron plantas</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(p => `
+    <div class="plant-card" onclick="openModal('${p.id}')">
+      <div class="plant-card-top">
+        <span class="plant-emoji">${p.emoji}</span>
+        <div class="plant-name">${p.name}</div>
+        <div class="plant-latin">${p.latin}</div>
+        <span class="difficulty-badge diff-${p.difficulty}">${p.diffLabel}</span>
+      </div>
+      <div class="plant-quick-stats">
+        <div class="quick-stat">
+          <div class="qs-label">pH</div>
+          <div class="qs-val">${p.params.ph}</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Cosecha</div>
+          <div class="qs-val">${p.harvestDays.split('–')[0]}d</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">EC (mS)</div>
+          <div class="qs-val">${p.params.ec}</div>
+        </div>
+        <div class="quick-stat">
+          <div class="qs-label">Luz</div>
+          <div class="qs-val">${p.params.luz}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderGrid();
+}
+
+function filterPlants() {
+  activeSearch = document.getElementById('searchInput').value;
+  renderGrid();
+}
+
+function openModal(id) {
+  const p = plants.find(x => x.id === id);
+  if (!p) return;
+
+  document.getElementById('modalHeader').innerHTML = `
+    <span class="modal-emoji">${p.emoji}</span>
+    <div>
+      <h2>${p.name}</h2>
+      <p>${p.latin}</p>
+      <span class="difficulty-badge diff-${p.difficulty}" style="display:inline-block;margin-top:4px">${p.diffLabel}</span>
+    </div>
+  `;
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="tabs-bottom">
+      <div class="tab-b active" onclick="switchTab('params', this)">Parámetros</div>
+      <div class="tab-b" onclick="switchTab('timeline', this)">Ciclo de vida</div>
+      <div class="tab-b" onclick="switchTab('alerts', this)">Alertas app</div>
+      <div class="tab-b" onclick="switchTab('sensors', this)">Sensores</div>
+    </div>
+
+    <div id="pane-params" class="pane">
+      <div class="section-label">Parámetros de cultivo</div>
+      <div class="params-grid">
+        <div class="param-card"><div class="param-icon">⚗️</div><div class="param-label">pH</div><div class="param-val good">${p.params.ph}</div></div>
+        <div class="param-card"><div class="param-icon">⚡</div><div class="param-label">EC mS/cm</div><div class="param-val good">${p.params.ec}</div></div>
+        <div class="param-card"><div class="param-icon">🌡️</div><div class="param-label">Temperatura</div><div class="param-val">${p.params.temp}</div></div>
+        <div class="param-card"><div class="param-icon">☀️</div><div class="param-label">Luz diaria</div><div class="param-val">${p.params.luz}</div></div>
+        <div class="param-card"><div class="param-icon">💧</div><div class="param-label">Humedad</div><div class="param-val">${p.params.humedad}</div></div>
+        <div class="param-card"><div class="param-icon">🚿</div><div class="param-label">Riego</div><div class="param-val" style="font-size:10px">${p.params.riego}</div></div>
+      </div>
+
+      <div class="section-label" style="margin-top:20px">Nutrientes principales (N-P-K-Ca-Mg)</div>
+      ${[
+        {key:'N', label:'Nitrógeno (N)', color:'#3B82F6'},
+        {key:'P', label:'Fósforo (P)', color:'#F59E0B'},
+        {key:'K', label:'Potasio (K)', color:'#10B981'},
+        {key:'Ca', label:'Calcio (Ca)', color:'#8B5CF6'},
+        {key:'Mg', label:'Magnesio (Mg)', color:'#EC4899'}
+      ].map(n => `
+        <div class="nutrient-row">
+          <span class="nutrient-label">${n.label}</span>
+          <div class="nutrient-bar-wrap"><div class="nutrient-bar" style="width:${p.nutrients[n.key]}%;background:${n.color}"></div></div>
+          <span class="nutrient-val">${p.nutrients[n.key]}%</span>
+        </div>
+      `).join('')}
+
+      <div class="section-label" style="margin-top:16px">💡 Consejo comercial</div>
+      <div class="alert-item info" style="margin-bottom:0">
+        <span class="alert-icon">💰</span>
+        <div class="alert-text"><p>${p.tip}</p></div>
+      </div>
+    </div>
+
+    <div id="pane-timeline" class="pane" style="display:none">
+      <div class="section-label">Ciclo de vida — ${p.harvestDays}</div>
+      <div class="timeline">
+        ${p.timeline.map(t => `
+          <div class="timeline-item">
+            <div class="timeline-week">${t.week}</div>
+            <div class="timeline-title">${t.title}</div>
+            <div class="timeline-desc">${t.desc}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div id="pane-alerts" class="pane" style="display:none">
+      <div class="section-label">Alertas que generará la app</div>
+      <div class="alert-list">
+        ${p.alerts.map(a => `
+          <div class="alert-item ${a.type}">
+            <span class="alert-icon">${a.icon}</span>
+            <div class="alert-text">
+              <strong>${a.title}</strong>
+              <p>${a.desc}</p>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div id="pane-sensors" class="pane" style="display:none">
+      <div class="section-label">Configuración de sensores (ESP32 / app)</div>
+      ${p.sensors.map(s => `
+        <div class="sensor-row">
+          <div class="sensor-info">
+            <strong>${s.name}</strong>
+            <span>${s.desc}</span>
+          </div>
+          <div class="sensor-range">${s.range}</div>
+        </div>
+      `).join('')}
+      <div class="section-label" style="margin-top:20px">Descripción para la app</div>
+      <div style="background:white;border-radius:8px;padding:12px;font-size:12px;color:#555;line-height:1.6;border:1px solid var(--borde)">
+        ${p.description}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function switchTab(pane, el) {
+  document.querySelectorAll('.pane').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.tab-b').forEach(t => t.classList.remove('active'));
+  document.getElementById('pane-' + pane).style.display = 'block';
+  el.classList.add('active');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+// JSON Preview
+function renderJSON() {
+  const sample = plants.slice(0, 2).map(p => ({
+    id: p.id,
+    name: p.name,
+    emoji: p.emoji,
+    category: p.category,
+    difficulty: p.difficulty,
+    params: p.params,
+    harvestDays: p.harvestDays,
+    nutrients: p.nutrients,
+    alertsCount: p.alerts.length,
+    sensorsRequired: p.sensors.map(s => s.name)
+  }));
+
+  const json = JSON.stringify(sample, null, 2);
+  const colored = json
+    .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+    .replace(/: "([^"]+)"/g, ': <span class="json-str">"$1"</span>')
+    .replace(/: (\d+)/g, ': <span class="json-num">$1</span>');
+
+  document.getElementById('jsonPreview').innerHTML = colored + '\n<span style="color:#6B7280">// ... + ' + (plants.length - 2) + ' plantas más</span>';
+}
+
+function copyJSON() {
+  const fullData = plants.map(p => ({
+    id: p.id,
+    name: p.name,
+    latin: p.latin,
+    emoji: p.emoji,
+    category: p.category,
+    difficulty: p.difficulty,
+    description: p.description,
+    params: p.params,
+    harvestDays: p.harvestDays,
+    nutrients: p.nutrients,
+    timeline: p.timeline,
+    alerts: p.alerts,
+    sensors: p.sensors,
+    tip: p.tip
+  }));
+  navigator.clipboard.writeText(JSON.stringify(fullData, null, 2));
+  const btn = document.querySelector('.copy-btn');
+  btn.textContent = '✓ Copiado';
+  setTimeout(() => btn.textContent = 'Copiar JSON', 2000);
+}
+
+// Init
+renderGrid();
+renderJSON();
+</script>
+
+
+</body></html>

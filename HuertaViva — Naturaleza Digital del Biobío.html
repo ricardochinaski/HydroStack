@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<!-- saved from url=(0056)file:///C:/Users/ricar/Downloads/huertaviva_landing.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HuertaViva — Naturaleza Digital del Biobío</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:        #0A0E0C;
+  --bg-2:      #0F1512;
+  --surface:   #131A16;
+  --surface-2: #182019;
+  --verde:     #3DDC84;
+  --verde-2:   #22C55E;
+  --verde-d:   #16A34A;
+  --verde-glow:rgba(61,220,132,.15);
+  --tierra:    #B8845A;
+  --azul:      #5B9BD5;
+  --naranja:   #E8833A;
+  --texto:     #F5F7F5;
+  --texto-2:   #9DB0A4;
+  --texto-3:   #5E6F64;
+  --borde:     rgba(157,176,164,.12);
+  --borde-2:   rgba(61,220,132,.25);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--texto);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--verde); color: var(--bg); }
+
+/* ── AMBIENT BACKGROUND ── */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, var(--verde-glow), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 20%, rgba(91,155,213,.06), transparent 60%);
+}
+
+.grain {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: .025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.wrap { position: relative; z-index: 2; max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 16px 0;
+  background: rgba(10,14,12,.7);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid transparent;
+  transition: border-color .3s;
+}
+nav.scrolled { border-bottom-color: var(--borde); }
+.nav-inner { max-width: 1180px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+.logo { display: flex; align-items: center; gap: 9px; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -.5px; }
+.logo-mark {
+  width: 30px; height: 30px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--verde), var(--verde-d));
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+  box-shadow: 0 0 20px var(--verde-glow);
+}
+.nav-links { display: flex; gap: 28px; }
+.nav-links a { color: var(--texto-2); text-decoration: none; font-size: 14px; font-weight: 500; transition: color .2s; }
+.nav-links a:hover { color: var(--verde); }
+.nav-cta {
+  padding: 9px 18px; border-radius: 10px;
+  background: var(--verde); color: var(--bg);
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  transition: transform .2s, box-shadow .2s;
+}
+.nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--verde-glow); }
+@media (max-width: 820px) { .nav-links { display: none; } }
+
+/* ── REVEAL ANIM ── */
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity .8s cubic-bezier(.16,1,.3,1), transform .8s cubic-bezier(.16,1,.3,1); }
+.reveal.in { opacity: 1; transform: none; }
+.reveal.d1 { transition-delay: .1s; }
+.reveal.d2 { transition-delay: .2s; }
+.reveal.d3 { transition-delay: .3s; }
+.reveal.d4 { transition-delay: .4s; }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+/* ── SECTION PRIMITIVES ── */
+section { position: relative; z-index: 2; padding: 100px 0; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500;
+  color: var(--verde); text-transform: uppercase; letter-spacing: 2px;
+  margin-bottom: 18px;
+}
+.eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--verde); }
+.section-title { font-family: 'Sora', sans-serif; font-size: clamp(28px, 5vw, 44px); font-weight: 700; letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 16px; }
+.section-sub { font-size: 17px; color: var(--texto-2); max-width: 560px; margin-bottom: 50px; }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding-top: 120px; padding-bottom: 60px;
+  position: relative;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-radius: 30px;
+  background: var(--surface); border: 1px solid var(--borde-2);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--verde);
+  margin-bottom: 28px; width: fit-content;
+}
+.hero-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--verde); box-shadow: 0 0 10px var(--verde); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+.hero h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(40px, 8vw, 82px);
+  font-weight: 800; line-height: .98; letter-spacing: -3px;
+  margin-bottom: 24px; max-width: 900px;
+}
+.hero h1 .accent {
+  background: linear-gradient(120deg, var(--verde), var(--azul));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-sub { font-size: clamp(17px, 2.5vw, 21px); color: var(--texto-2); max-width: 600px; margin-bottom: 40px; font-weight: 300; }
+.hero-sub strong { color: var(--texto); font-weight: 600; }
+
+.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 64px; }
+.btn-primary {
+  padding: 15px 28px; border-radius: 12px;
+  background: var(--verde); color: var(--bg);
+  font-size: 15px; font-weight: 600; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: transform .2s, box-shadow .2s;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px var(--verde-glow); }
+.btn-ghost {
+  padding: 15px 28px; border-radius: 12px;
+  background: transparent; color: var(--texto);
+  border: 1px solid var(--borde); font-size: 15px; font-weight: 500; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 8px; transition: border-color .2s, background .2s;
+}
+.btn-ghost:hover { border-color: var(--verde); background: var(--surface); }
+
+.hero-metrics { display: flex; gap: 48px; flex-wrap: wrap; }
+.metric .m-num {
+  font-family: 'Sora', sans-serif; font-size: clamp(36px, 6vw, 56px); font-weight: 800;
+  letter-spacing: -2px; line-height: 1;
+  background: linear-gradient(120deg, var(--verde), var(--verde-d));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.metric .m-label { font-size: 13px; color: var(--texto-2); margin-top: 8px; font-weight: 500; }
+.metric-divider { width: 1px; background: var(--borde); align-self: stretch; }
+@media (max-width: 600px) { .metric-divider { display: none; } .hero-metrics { gap: 32px; } }
+
+/* floating tower visual */
+.hero-tower {
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  width: 320px; height: 540px; opacity: .9; pointer-events: none;
+}
+@media (max-width: 1080px) { .hero-tower { opacity: .12; right: -40px; } }
+@media (max-width: 720px) { .hero-tower { display: none; } }
+
+/* ── PROBLEM / SOLUTION ── */
+.ps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 800px) { .ps-grid { grid-template-columns: 1fr; } }
+
+.ps-card {
+  border-radius: 20px; padding: 36px;
+  position: relative; overflow: hidden;
+}
+.ps-card.problem {
+  background: linear-gradient(160deg, #1A1614, #14100E);
+  border: 1px solid rgba(232,131,58,.15);
+}
+.ps-card.solution {
+  background: linear-gradient(160deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--borde-2);
+}
+.ps-card.solution::before {
+  content: ''; position: absolute; top: -50%; right: -30%;
+  width: 300px; height: 300px; border-radius: 50%;
+  background: radial-gradient(circle, var(--verde-glow), transparent 70%);
+}
+.ps-icon { font-size: 32px; margin-bottom: 20px; }
+.ps-card h3 { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; letter-spacing: -.5px; position: relative; }
+.ps-card .ps-tag {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  margin-bottom: 16px; display: block;
+}
+.ps-card.problem .ps-tag { color: var(--naranja); }
+.ps-card.solution .ps-tag { color: var(--verde); }
+.ps-list { list-style: none; position: relative; }
+.ps-list li {
+  font-size: 15px; color: var(--texto-2); padding: 10px 0 10px 28px;
+  position: relative; border-bottom: 1px solid var(--borde);
+}
+.ps-list li:last-child { border-bottom: none; }
+.ps-list li::before {
+  position: absolute; left: 0; top: 10px; font-size: 14px;
+}
+.ps-card.problem .ps-list li::before { content: '✕'; color: var(--naranja); }
+.ps-card.solution .ps-list li::before { content: '✓'; color: var(--verde); }
+.ps-card.solution .ps-list li strong { color: var(--verde); font-weight: 600; }
+
+.thesis {
+  margin-top: 40px; text-align: center;
+  font-family: 'Sora', sans-serif; font-size: clamp(20px, 3.5vw, 30px); font-weight: 600;
+  letter-spacing: -1px; line-height: 1.3; max-width: 760px; margin-left: auto; margin-right: auto;
+}
+.thesis .hl {
+  background: linear-gradient(120deg, var(--verde), var(--verde-2));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* ── ECOSYSTEM (3 pillars) ── */
+.eco-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 800px) { .eco-grid { grid-template-columns: 1fr; } }
+.eco-pillar {
+  background: var(--surface); border: 1px solid var(--borde); border-radius: 18px;
+  padding: 32px 26px; position: relative; overflow: hidden; transition: border-color .3s, transform .3s;
+}
+.eco-pillar:hover { border-color: var(--borde-2); transform: translateY(-4px); }
+.eco-pillar .eco-top-line { height: 3px; width: 44px; border-radius: 3px; margin-bottom: 22px; }
+.eco-pillar.hw .eco-top-line { background: var(--tierra); }
+.eco-pillar.sw .eco-top-line { background: var(--azul); }
+.eco-pillar.ww .eco-top-line { background: var(--naranja); }
+.eco-pillar .eco-icon { font-size: 30px; margin-bottom: 16px; }
+.eco-pillar .eco-kind { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--texto-3); margin-bottom: 6px; }
+.eco-pillar h3 { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 10px; letter-spacing: -.5px; }
+.eco-pillar p { font-size: 14px; color: var(--texto-2); }
+
+/* ── PRODUCT SPECS ── */
+.product-layout { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 48px; align-items: center; }
+@media (max-width: 900px) { .product-layout { grid-template-columns: 1fr; gap: 32px; } }
+.product-visual {
+  background: linear-gradient(160deg, var(--surface-2), var(--bg-2));
+  border: 1px solid var(--borde); border-radius: 24px;
+  padding: 30px; display: flex; align-items: center; justify-content: center; min-height: 420px;
+  position: relative; overflow: hidden;
+}
+.product-visual::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 30%, var(--verde-glow), transparent 70%);
+}
+.specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 480px) { .specs-grid { grid-template-columns: 1fr; } }
+.spec-item {
+  background: var(--surface); border: 1px solid var(--borde); border-radius: 14px;
+  padding: 18px; transition: border-color .3s;
+}
+.spec-item:hover { border-color: var(--borde-2); }
+.spec-item .spec-icon { font-size: 22px; margin-bottom: 10px; }
+.spec-item .spec-val { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+.spec-item .spec-label { font-size: 13px; color: var(--texto-2); margin-top: 2px; }
+
+/* ── VERSIONS / PRICING ── */
+.versions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 800px) { .versions-grid { grid-template-columns: 1fr; } }
+.version-card {
+  border-radius: 22px; padding: 36px 32px; position: relative; overflow: hidden;
+  border: 1px solid var(--borde); background: var(--surface);
+}
+.version-card.pro {
+  border-color: var(--borde-2);
+  background: linear-gradient(165deg, var(--surface-2), var(--surface));
+}
+.version-card.pro::before {
+  content: ''; position: absolute; top: -40%; right: -20%; width: 320px; height: 320px; border-radius: 50%;
+  background: radial-gradient(circle, var(--verde-glow), transparent 70%);
+}
+.version-badge {
+  position: absolute; top: 24px; right: 24px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500;
+  padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px;
+}
+.version-badge.eco-b { background: rgba(157,176,164,.12); color: var(--texto-2); }
+.version-badge.pro-b { background: var(--verde); color: var(--bg); }
+.version-card .v-name { font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--texto-2); margin-bottom: 6px; }
+.version-card .v-price { font-family: 'Sora', sans-serif; font-size: 52px; font-weight: 800; letter-spacing: -2px; line-height: 1; }
+.version-card.pro .v-price { background: linear-gradient(120deg, var(--verde), var(--azul)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.version-card .v-price small { font-size: 18px; color: var(--texto-3); font-weight: 500; letter-spacing: 0; }
+.version-card .v-tagline { font-size: 14px; color: var(--texto-2); margin: 12px 0 24px; }
+.v-features { list-style: none; margin-bottom: 24px; }
+.v-features li { font-size: 14px; color: var(--texto); padding: 9px 0 9px 26px; position: relative; border-bottom: 1px solid var(--borde); }
+.v-features li:last-child { border-bottom: none; }
+.v-features li::before { content: '✓'; position: absolute; left: 0; color: var(--verde); font-weight: 700; }
+.v-features li.muted { color: var(--texto-3); }
+.v-features li.muted::before { content: '—'; color: var(--texto-3); }
+.v-economics { display: flex; gap: 20px; padding-top: 20px; border-top: 1px solid var(--borde); }
+.v-econ-item .ve-label { font-size: 11px; color: var(--texto-3); text-transform: uppercase; letter-spacing: .5px; font-family: 'JetBrains Mono', monospace; }
+.v-econ-item .ve-val { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 700; margin-top: 4px; }
+.v-econ-item .ve-val.green { color: var(--verde); }
+
+/* ── APP MODES ── */
+.modes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 40px; }
+@media (max-width: 820px) { .modes-grid { grid-template-columns: 1fr; } }
+.mode-card {
+  background: var(--surface); border: 1px solid var(--borde); border-radius: 18px; padding: 28px 24px;
+  transition: transform .3s, border-color .3s;
+}
+.mode-card:hover { transform: translateY(-4px); border-color: var(--borde-2); }
+.mode-card .mode-icon {
+  width: 48px; height: 48px; border-radius: 13px; display: flex; align-items: center; justify-content: center;
+  font-size: 24px; margin-bottom: 18px;
+}
+.mode-card.m1 .mode-icon { background: rgba(61,220,132,.12); }
+.mode-card.m2 .mode-icon { background: rgba(91,155,213,.12); }
+.mode-card.m3 .mode-icon { background: rgba(139,92,246,.12); }
+.mode-card h4 { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.mode-card p { font-size: 14px; color: var(--texto-2); }
+.tech-stack-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.tech-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--borde);
+  font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--texto);
+}
+.tech-chip .tc-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ── PLANTS ── */
+.plants-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 820px) { .plants-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .plants-grid { grid-template-columns: repeat(2, 1fr); } }
+.plant-chip {
+  background: var(--surface); border: 1px solid var(--borde); border-radius: 14px;
+  padding: 18px 14px; text-align: center; transition: transform .25s, border-color .25s, background .25s;
+}
+.plant-chip:hover { transform: translateY(-3px); border-color: var(--borde-2); background: var(--surface-2); }
+.plant-chip .pe { font-size: 30px; display: block; margin-bottom: 8px; }
+.plant-chip .pn { font-size: 14px; font-weight: 600; }
+.plant-chip .pd { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--verde); margin-top: 4px; }
+
+/* ── BUSINESS ── */
+.biz-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 36px; }
+@media (max-width: 820px) { .biz-grid { grid-template-columns: 1fr; } }
+.biz-card {
+  background: var(--surface); border: 1px solid var(--borde); border-radius: 18px; padding: 28px 24px;
+  position: relative;
+}
+.biz-card .biz-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--texto-3); margin-bottom: 14px; }
+.biz-card .biz-icon { font-size: 26px; margin-bottom: 14px; }
+.biz-card h4 { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.biz-card p { font-size: 14px; color: var(--texto-2); margin-bottom: 14px; }
+.biz-card .biz-figure { font-family: 'Sora', sans-serif; font-size: 24px; font-weight: 700; color: var(--verde); }
+.biz-card .biz-figure small { font-size: 13px; color: var(--texto-3); font-weight: 400; }
+
+.projection {
+  background: linear-gradient(160deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--borde-2); border-radius: 22px; padding: 36px;
+  text-align: center; position: relative; overflow: hidden;
+}
+.projection::before { content: ''; position: absolute; top: -50%; left: 50%; transform: translateX(-50%); width: 500px; height: 300px; background: radial-gradient(ellipse, var(--verde-glow), transparent 70%); }
+.projection .proj-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: var(--verde); margin-bottom: 16px; position: relative; }
+.projection .proj-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; position: relative; }
+@media (max-width: 600px) { .projection .proj-grid { grid-template-columns: 1fr; gap: 16px; } }
+.proj-item .pi-num { font-family: 'Sora', sans-serif; font-size: clamp(28px, 5vw, 44px); font-weight: 800; letter-spacing: -1.5px; background: linear-gradient(120deg, var(--verde), var(--verde-d)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.proj-item .pi-label { font-size: 13px; color: var(--texto-2); margin-top: 6px; }
+
+/* ── TECH DIFFERENTIATORS ── */
+.tech-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 820px) { .tech-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .tech-grid { grid-template-columns: 1fr; } }
+.tech-item {
+  background: var(--surface); border: 1px solid var(--borde); border-radius: 14px; padding: 22px;
+  display: flex; gap: 14px; align-items: flex-start; transition: border-color .3s;
+}
+.tech-item:hover { border-color: var(--borde-2); }
+.tech-item .ti-icon { font-size: 24px; flex-shrink: 0; }
+.tech-item h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.tech-item p { font-size: 13px; color: var(--texto-2); }
+
+/* ── ROADMAP ── */
+.roadmap { position: relative; padding-left: 8px; }
+.roadmap::before { content: ''; position: absolute; left: 19px; top: 16px; bottom: 16px; width: 2px; background: linear-gradient(var(--verde), var(--borde)); }
+.road-step { display: flex; gap: 24px; margin-bottom: 28px; position: relative; }
+.road-step:last-child { margin-bottom: 0; }
+.road-dot {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+  background: var(--surface); border: 2px solid var(--borde);
+}
+.road-step.active .road-dot { border-color: var(--verde); box-shadow: 0 0 20px var(--verde-glow); background: var(--surface-2); }
+.road-body { flex: 1; padding-top: 4px; }
+.road-phase { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--texto-3); margin-bottom: 4px; }
+.road-step.active .road-phase { color: var(--verde); }
+.road-body h4 { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.road-body p { font-size: 14px; color: var(--texto-2); }
+.road-tag { display: inline-block; margin-top: 8px; font-size: 11px; padding: 3px 10px; border-radius: 20px; background: rgba(61,220,132,.12); color: var(--verde); font-family: 'JetBrains Mono', monospace; }
+
+/* ── SOCIOS CTA ── */
+.socios {
+  background: linear-gradient(165deg, #0C120E, #060907);
+  border-top: 1px solid var(--borde-2);
+  padding: 110px 0 90px;
+}
+.socios-inner { text-align: center; max-width: 720px; margin: 0 auto; }
+.socios h2 { font-family: 'Sora', sans-serif; font-size: clamp(32px, 6vw, 56px); font-weight: 800; letter-spacing: -2px; line-height: 1.05; margin-bottom: 20px; }
+.socios h2 .hl { background: linear-gradient(120deg, var(--verde), var(--azul)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.socios p { font-size: 18px; color: var(--texto-2); margin-bottom: 36px; }
+.socios-seeking { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 44px; }
+.seek-pill {
+  padding: 12px 22px; border-radius: 30px; background: var(--surface); border: 1px solid var(--borde-2);
+  font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;
+}
+.socios-cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 18px 36px; border-radius: 14px; background: var(--verde); color: var(--bg);
+  font-size: 16px; font-weight: 700; text-decoration: none;
+  transition: transform .2s, box-shadow .2s;
+}
+.socios-cta:hover { transform: translateY(-2px); box-shadow: 0 16px 40px var(--verde-glow); }
+
+/* ── FOOTER ── */
+footer { padding: 40px 0; border-top: 1px solid var(--borde); text-align: center; }
+footer .f-logo { display: inline-flex; align-items: center; gap: 8px; font-family: 'Sora', sans-serif; font-weight: 700; margin-bottom: 10px; }
+footer p { font-size: 13px; color: var(--texto-3); }
+</style>
+</head>
+<body>
+
+<div class="ambient"></div>
+<div class="grain"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-inner">
+    <div class="logo">
+      <span class="logo-mark">🌿</span>
+      HuertaViva
+    </div>
+    <div class="nav-links">
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_landing.html#producto">Producto</a>
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_landing.html#app">App</a>
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_landing.html#plantas">Plantas</a>
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_landing.html#negocio">Negocio</a>
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_landing.html#roadmap">Roadmap</a>
+    </div>
+    <a href="file:///C:/Users/ricar/Downloads/huertaviva_landing.html#socios" class="nav-cta">Invertir</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-badge reveal in">
+      <span class="dot"></span>
+      PROTOTIPO v1.0 · REGIÓN DEL BIOBÍO
+    </div>
+    <h1 class="reveal in d1">
+      Tu huerta<br><span class="accent">piensa sola.</span>
+    </h1>
+    <p class="hero-sub reveal in d2">
+      No vendemos torres de cultivo. Vendemos la <strong>garantía de una cosecha exitosa</strong> mediante un ecosistema digital y humano: hardware, software y asesoría agronómica en una sola solución.
+    </p>
+    <div class="hero-actions reveal in d3">
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_landing.html#socios" class="btn-primary">Quiero ser socio →</a>
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_landing.html#producto" class="btn-ghost">Ver el producto</a>
+    </div>
+    <div class="hero-metrics reveal in d4">
+      <div class="metric">
+        <div class="m-num">24</div>
+        <div class="m-label">Plantas por torre</div>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <div class="m-num">43%</div>
+        <div class="m-label">Margen versión PRO</div>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <div class="m-num">1.65<span style="font-size:.5em">m</span></div>
+        <div class="m-label">Altura · espacios urbanos</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- floating tower SVG -->
+  <svg class="hero-tower" viewBox="0 0 320 540" fill="none">
+    <defs>
+      <lineargradient id="towerGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3DDC84" stop-opacity=".4"></stop>
+        <stop offset="1" stop-color="#16A34A" stop-opacity=".1"></stop>
+      </lineargradient>
+      <filter id="glow"><fegaussianblur stdDeviation="8" result="b"></fegaussianblur><femerge><femergenode in="b"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge></filter>
+    </defs>
+    <ellipse cx="160" cy="510" rx="90" ry="22" fill="#3DDC84" opacity=".12"></ellipse>
+    <rect x="135" y="60" width="50" height="440" rx="12" fill="url(#towerGrad)" stroke="#3DDC84" stroke-opacity=".4" stroke-width="1.5"></rect>
+    <line x1="160" y1="80" x2="160" y2="490" stroke="#3DDC84" stroke-width="2" stroke-dasharray="5 5" opacity=".5" filter="url(#glow)"></line>
+    <g opacity=".85">
+      <!-- nodes -->
+      <circle cx="110" cy="110" r="9" fill="#3DDC84" opacity=".7"></circle>
+      <circle cx="210" cy="110" r="9" fill="#3DDC84" opacity=".7"></circle>
+      <circle cx="110" cy="180" r="9" fill="#3DDC84" opacity=".6"></circle>
+      <circle cx="210" cy="180" r="9" fill="#3DDC84" opacity=".6"></circle>
+      <circle cx="110" cy="250" r="9" fill="#3DDC84" opacity=".55"></circle>
+      <circle cx="210" cy="250" r="9" fill="#3DDC84" opacity=".55"></circle>
+      <circle cx="110" cy="320" r="9" fill="#3DDC84" opacity=".5"></circle>
+      <circle cx="210" cy="320" r="9" fill="#3DDC84" opacity=".5"></circle>
+      <circle cx="110" cy="390" r="9" fill="#3DDC84" opacity=".45"></circle>
+      <circle cx="210" cy="390" r="9" fill="#3DDC84" opacity=".45"></circle>
+      <circle cx="110" cy="455" r="9" fill="#3DDC84" opacity=".4"></circle>
+      <circle cx="210" cy="455" r="9" fill="#3DDC84" opacity=".4"></circle>
+    </g>
+  </svg>
+</header>
+
+<!-- PROBLEM / SOLUTION -->
+<section id="problema">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">El insight</span>
+      <h2 class="section-title">Vender tubos no es vender éxito</h2>
+    </div>
+    <div class="ps-grid">
+      <div class="ps-card problem reveal d1">
+        <div class="ps-icon">🥀</div>
+        <span class="ps-tag">El problema actual</span>
+        <h3>La competencia falla</h3>
+        <ul class="ps-list" style="margin-top:20px">
+          <li>Vender solo tubos de PVC no garantiza resultados</li>
+          <li>El usuario no tiene conocimiento agronómico</li>
+          <li>Sin guía, las plantas mueren en semanas</li>
+          <li>Cultivar en casa exige tiempo que nadie tiene</li>
+          <li>Los kits genéricos terminan abandonados</li>
+        </ul>
+      </div>
+      <div class="ps-card solution reveal d2">
+        <div class="ps-icon">🌱</div>
+        <span class="ps-tag">Nuestra solución</span>
+        <h3>Un ecosistema completo</h3>
+        <ul class="ps-list" style="margin-top:20px">
+          <li>Una torre que <strong>se riega sola</strong> sin intervención</li>
+          <li>App que avisa <strong>en lenguaje humano</strong> qué hacer</li>
+          <li>Te dice exactamente <strong>cuándo cosechar</strong></li>
+          <li>Diagnóstico de plantas con <strong>inteligencia artificial</strong></li>
+          <li>Asesoría agronómica continua incluida</li>
+        </ul>
+      </div>
+    </div>
+    <p class="thesis reveal d2">
+      No vendemos hardware. Vendemos la <span class="hl">garantía de una cosecha exitosa</span> a través de un ecosistema digital y humano.
+    </p>
+  </div>
+</section>
+
+<!-- ECOSYSTEM -->
+<section id="ecosistema">
+  <div class="wrap">
+    <div class="reveal" style="text-align:center; max-width:640px; margin:0 auto 50px">
+      <span class="eyebrow" style="justify-content:center">El ecosistema inteligente</span>
+      <h2 class="section-title">Tres piezas, una sola promesa</h2>
+      <p class="section-sub" style="margin:0 auto">Hardware, software y asesoría humana funcionando como un solo organismo que garantiza tu cosecha.</p>
+    </div>
+    <div class="eco-grid">
+      <div class="eco-pillar hw reveal d1">
+        <div class="eco-top-line"></div>
+        <div class="eco-icon">🌿</div>
+        <div class="eco-kind">Hardware</div>
+        <h3>La huerta física</h3>
+        <p>Estructura vertical optimizada para espacios urbanos. 1.65m, 8 niveles, riego automático por gravedad.</p>
+      </div>
+      <div class="eco-pillar sw reveal d2">
+        <div class="eco-top-line"></div>
+        <div class="eco-icon">📱</div>
+        <div class="eco-kind">Software · IoT</div>
+        <h3>Tecnología en tiempo real</h3>
+        <p>Sensores ESP32 y app Flutter que controlan riego, humedad y nutrientes según cada tipo de planta.</p>
+      </div>
+      <div class="eco-pillar ww reveal d3">
+        <div class="eco-top-line"></div>
+        <div class="eco-icon">🤝</div>
+        <div class="eco-kind">Wetware · Humano</div>
+        <h3>Asesoría agronómica</h3>
+        <p>Inteligencia agronómica y soporte continuo para asegurar el ciclo de vida completo del cultivo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCT -->
+<section id="producto">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">El producto</span>
+      <h2 class="section-title">Una torre que trabaja sola</h2>
+    </div>
+    <div class="product-layout">
+      <div class="product-visual reveal d1">
+        <svg width="200" height="360" viewBox="0 0 200 360" fill="none" style="position:relative;z-index:2">
+          <defs>
+            <lineargradient id="pg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#3DDC84" stop-opacity=".35"></stop>
+              <stop offset="1" stop-color="#16A34A" stop-opacity=".08"></stop>
+            </lineargradient>
+          </defs>
+          <ellipse cx="100" cy="340" rx="70" ry="16" fill="#3DDC84" opacity=".15"></ellipse>
+          <path d="M40 320 Q40 332 100 332 Q160 332 160 320 L155 305 L45 305 Z" fill="#1a2620" stroke="#3DDC84" stroke-opacity=".3"></path>
+          <rect x="82" y="30" width="36" height="280" rx="10" fill="url(#pg)" stroke="#3DDC84" stroke-opacity=".4"></rect>
+          <line x1="100" y1="45" x2="100" y2="300" stroke="#3DDC84" stroke-width="1.5" stroke-dasharray="4 4" opacity=".5"></line>
+          <g>
+            <circle cx="65" cy="70" r="7" fill="#3DDC84" opacity=".7"></circle><circle cx="135" cy="70" r="7" fill="#3DDC84" opacity=".7"></circle>
+            <circle cx="65" cy="115" r="7" fill="#3DDC84" opacity=".6"></circle><circle cx="135" cy="115" r="7" fill="#3DDC84" opacity=".6"></circle>
+            <circle cx="65" cy="160" r="7" fill="#3DDC84" opacity=".55"></circle><circle cx="135" cy="160" r="7" fill="#3DDC84" opacity=".55"></circle>
+            <circle cx="65" cy="205" r="7" fill="#3DDC84" opacity=".5"></circle><circle cx="135" cy="205" r="7" fill="#3DDC84" opacity=".5"></circle>
+            <circle cx="65" cy="250" r="7" fill="#3DDC84" opacity=".45"></circle><circle cx="135" cy="250" r="7" fill="#3DDC84" opacity=".45"></circle>
+            <circle cx="65" cy="290" r="7" fill="#3DDC84" opacity=".4"></circle><circle cx="135" cy="290" r="7" fill="#3DDC84" opacity=".4"></circle>
+          </g>
+        </svg>
+      </div>
+      <div class="specs-grid reveal d2">
+        <div class="spec-item"><div class="spec-icon">📏</div><div class="spec-val">1.65 m</div><div class="spec-label">Altura total</div></div>
+        <div class="spec-item"><div class="spec-icon">🪴</div><div class="spec-val">8 niveles</div><div class="spec-label">3 plantas por nivel</div></div>
+        <div class="spec-item"><div class="spec-icon">🌱</div><div class="spec-val">24 plantas</div><div class="spec-label">Capacidad total</div></div>
+        <div class="spec-item"><div class="spec-icon">💧</div><div class="spec-val">35 litros</div><div class="spec-label">Reservorio de agua</div></div>
+        <div class="spec-item"><div class="spec-icon">⚡</div><div class="spec-val">Bomba</div><div class="spec-label">Sumergible automática</div></div>
+        <div class="spec-item"><div class="spec-icon">🔁</div><div class="spec-val">Gravedad</div><div class="spec-label">Riego en ciclo cerrado</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VERSIONS -->
+<section id="versiones">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">Modelo de producto</span>
+      <h2 class="section-title">Dos versiones, un mismo ADN</h2>
+      <p class="section-sub">Empieza accesible, escala a premium. Cada versión tiene su margen y su mercado.</p>
+    </div>
+    <div class="versions-grid">
+      <div class="version-card eco reveal d1">
+        <span class="version-badge eco-b">Entrada</span>
+        <div class="v-name">HuertaViva ECO</div>
+        <div class="v-price">$200<small> USD</small></div>
+        <p class="v-tagline">Control inteligente esencial. Ideal para el primer cliente.</p>
+        <ul class="v-features">
+          <li>ESP32 con WiFi + control por app</li>
+          <li>Sensor de temperatura y humedad</li>
+          <li>Sensor de nivel de agua</li>
+          <li>Riego automático programable</li>
+          <li>Alertas push en lenguaje humano</li>
+          <li class="muted">Sensores pH y EC</li>
+          <li class="muted">Pantalla táctil local</li>
+        </ul>
+        <div class="v-economics">
+          <div class="v-econ-item"><div class="ve-label">Costo prod.</div><div class="ve-val">$155</div></div>
+          <div class="v-econ-item"><div class="ve-label">Margen</div><div class="ve-val green">23%</div></div>
+        </div>
+      </div>
+      <div class="version-card pro reveal d2">
+        <span class="version-badge pro-b">Premium</span>
+        <div class="v-name">HuertaViva PRO</div>
+        <div class="v-price">$450<small> USD</small></div>
+        <p class="v-tagline">El ecosistema completo. Dosificación y diagnóstico automático.</p>
+        <ul class="v-features">
+          <li>Todo lo de la versión ECO</li>
+          <li>Sensor de pH del agua</li>
+          <li>Sensor de EC (nutrientes)</li>
+          <li>Pantalla táctil 2.8" integrada</li>
+          <li>Dosificación automática de nutrientes</li>
+          <li>Carcasa impresa en 3D con logo</li>
+          <li>Diagnóstico de plantas con IA</li>
+        </ul>
+        <div class="v-economics">
+          <div class="v-econ-item"><div class="ve-label">Costo prod.</div><div class="ve-val">$257</div></div>
+          <div class="v-econ-item"><div class="ve-label">Margen</div><div class="ve-val green">43%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APP -->
+<section id="app">
+  <div class="wrap">
+    <div class="reveal" style="text-align:center; max-width:640px; margin:0 auto 50px">
+      <span class="eyebrow" style="justify-content:center">La aplicación</span>
+      <h2 class="section-title">Una app, tres personas</h2>
+      <p class="section-sub" style="margin:0 auto">La misma huerta se adapta a quien la usa. Desde la abuela hasta el chef de un restaurante.</p>
+    </div>
+    <div class="modes-grid">
+      <div class="mode-card m1 reveal d1">
+        <div class="mode-icon">😌</div>
+        <h4>Modo Tranquilo</h4>
+        <p>La huerta se cuida sola. Solo recibe avisos simples como "agrega agua hoy" o "cosecha lista". Sin números, sin complicaciones.</p>
+      </div>
+      <div class="mode-card m2 reveal d2">
+        <div class="mode-icon">🔍</div>
+        <h4>Modo Inteligente</h4>
+        <p>Ve el estado general de su huerta, puede regar manualmente con un toque y recibe notificaciones útiles cuando algo importa.</p>
+      </div>
+      <div class="mode-card m3 reveal d3">
+        <div class="mode-icon">⚙️</div>
+        <h4>Modo Experto</h4>
+        <p>Control total. Datos en tiempo real, gráficos históricos, ajuste de nutrientes y horarios. Para restaurantes y entusiastas.</p>
+      </div>
+    </div>
+    <div class="tech-stack-row reveal d2">
+      <span class="tech-chip"><span class="tc-dot" style="background:#54C5F8"></span>Flutter · iOS + Android</span>
+      <span class="tech-chip"><span class="tc-dot" style="background:#FFA000"></span>Firebase Realtime DB</span>
+      <span class="tech-chip"><span class="tc-dot" style="background:#3DDC84"></span>ESP32 IoT</span>
+      <span class="tech-chip"><span class="tc-dot" style="background:#D97757"></span>Diagnóstico con IA</span>
+    </div>
+  </div>
+</section>
+
+<!-- PLANTS -->
+<section id="plantas">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">Base de datos agronómica</span>
+      <h2 class="section-title">12 cultivos, datos exactos</h2>
+      <p class="section-sub">Cada planta con su perfil de riego, pH, nutrientes y tiempo de cosecha precargado en la app.</p>
+    </div>
+    <div class="plants-grid">
+      <div class="plant-chip reveal d1"><span class="pe">🥬</span><div class="pn">Lechuga</div><div class="pd">30–40 días</div></div>
+      <div class="plant-chip reveal d1"><span class="pe">🌿</span><div class="pn">Albahaca</div><div class="pd">25–35 días</div></div>
+      <div class="plant-chip reveal d1"><span class="pe">🍃</span><div class="pn">Espinaca</div><div class="pd">30–45 días</div></div>
+      <div class="plant-chip reveal d1"><span class="pe">🍓</span><div class="pn">Fresa</div><div class="pd">90–120 días</div></div>
+      <div class="plant-chip reveal d2"><span class="pe">🌱</span><div class="pn">Cilantro</div><div class="pd">30–40 días</div></div>
+      <div class="plant-chip reveal d2"><span class="pe">🍀</span><div class="pn">Rúcula</div><div class="pd">25–30 días</div></div>
+      <div class="plant-chip reveal d2"><span class="pe">🍵</span><div class="pn">Menta</div><div class="pd">30–45 días</div></div>
+      <div class="plant-chip reveal d2"><span class="pe">🥗</span><div class="pn">Acelga</div><div class="pd">45–60 días</div></div>
+      <div class="plant-chip reveal d3"><span class="pe">🌾</span><div class="pn">Perejil</div><div class="pd">70–90 días</div></div>
+      <div class="plant-chip reveal d3"><span class="pe">🍅</span><div class="pn">Tomate Cherry</div><div class="pd">60–90 días</div></div>
+      <div class="plant-chip reveal d3"><span class="pe">🥦</span><div class="pn">Kale</div><div class="pd">55–75 días</div></div>
+      <div class="plant-chip reveal d3"><span class="pe">🥒</span><div class="pn">Pepino</div><div class="pd">50–70 días</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- BUSINESS -->
+<section id="negocio">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">Modelo de negocio</span>
+      <h2 class="section-title">Tres fuentes de ingreso</h2>
+      <p class="section-sub">No es una venta única. Es un cliente que genera ingresos recurrentes mes a mes.</p>
+    </div>
+    <div class="biz-grid">
+      <div class="biz-card reveal d1">
+        <div class="biz-num">01</div>
+        <div class="biz-icon">📦</div>
+        <h4>Venta de hardware</h4>
+        <p>La torre con su electrónica. Margen del 23% en ECO y 43% en PRO.</p>
+        <div class="biz-figure">$200–450 <small>/ unidad</small></div>
+      </div>
+      <div class="biz-card reveal d2">
+        <div class="biz-num">02</div>
+        <div class="biz-icon">🔄</div>
+        <h4>Suscripción nutrientes</h4>
+        <p>Reposición mensual automática de la solución nutritiva. Ingreso recurrente.</p>
+        <div class="biz-figure">$20 <small>/ mes por cliente</small></div>
+      </div>
+      <div class="biz-card reveal d3">
+        <div class="biz-num">03</div>
+        <div class="biz-icon">⬆️</div>
+        <h4>Upgrade ECO → PRO</h4>
+        <p>El cliente que empieza con ECO migra a PRO con sensores y dosificación.</p>
+        <div class="biz-figure">+$250 <small>/ upgrade</small></div>
+      </div>
+    </div>
+    <div class="projection reveal d2">
+      <div class="proj-label">Proyección mensual · 10 torres PRO + suscripciones</div>
+      <div class="proj-grid">
+        <div class="proj-item"><div class="pi-num">$4.500</div><div class="pi-label">Venta de 10 torres PRO</div></div>
+        <div class="proj-item"><div class="pi-num">$1.930</div><div class="pi-label">Ganancia neta hardware (43%)</div></div>
+        <div class="proj-item"><div class="pi-num">+$200</div><div class="pi-label">Suscripciones recurrentes/mes</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH -->
+<section id="tecnologia">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">Tecnología &amp; diferenciadores</span>
+      <h2 class="section-title">Lo que nadie más tiene</h2>
+      <p class="section-sub">La competencia vende plástico. Nosotros vendemos un sistema que aprende.</p>
+    </div>
+    <div class="tech-grid">
+      <div class="tech-item reveal d1"><span class="ti-icon">🧠</span><div><h4>ESP32 con WiFi</h4><p>Microcontrolador que funciona aunque se caiga el internet.</p></div></div>
+      <div class="tech-item reveal d1"><span class="ti-icon">☁️</span><div><h4>Firebase Realtime</h4><p>Datos de la huerta sincronizados en la nube en tiempo real.</p></div></div>
+      <div class="tech-item reveal d2"><span class="ti-icon">📱</span><div><h4>Flutter multiplataforma</h4><p>Una sola base de código para iOS y Android.</p></div></div>
+      <div class="tech-item reveal d2"><span class="ti-icon">⚗️</span><div><h4>Sensores pH y EC</h4><p>Medición precisa de la solución nutritiva en versión PRO.</p></div></div>
+      <div class="tech-item reveal d3"><span class="ti-icon">🖨️</span><div><h4>Piezas 3D con marca</h4><p>Carcasas impresas con el logo. No es un kit genérico.</p></div></div>
+      <div class="tech-item reveal d3"><span class="ti-icon">🤖</span><div><h4>Diagnóstico con IA</h4><p>El cliente fotografía la planta y la IA dice qué hacer.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">Hoja de ruta</span>
+      <h2 class="section-title">Dónde estamos, hacia dónde vamos</h2>
+    </div>
+    <div class="roadmap">
+      <div class="road-step active reveal d1">
+        <div class="road-dot">🌱</div>
+        <div class="road-body">
+          <div class="road-phase">Fase 1 · Ahora</div>
+          <h4>Prototipo físico funcionando</h4>
+          <p>Torre construida, sistema de riego validado, base de datos de plantas lista.</p>
+          <span class="road-tag">En curso</span>
+        </div>
+      </div>
+      <div class="road-step reveal d2">
+        <div class="road-dot">⚡</div>
+        <div class="road-body">
+          <div class="road-phase">Fase 2 · Próximo</div>
+          <h4>Electrónica básica + App MVP</h4>
+          <p>Integración ESP32, app Flutter mínima viable y notificaciones funcionando.</p>
+          <span class="road-tag">4–6 semanas</span>
+        </div>
+      </div>
+      <div class="road-step reveal d3">
+        <div class="road-dot">🚀</div>
+        <div class="road-body">
+          <div class="road-phase">Fase 3 · 3 meses</div>
+          <h4>Versión PRO completa</h4>
+          <p>Sensores pH y EC, pantalla táctil, dosificación automática y diagnóstico IA.</p>
+          <span class="road-tag">Q3</span>
+        </div>
+      </div>
+      <div class="road-step reveal d4">
+        <div class="road-dot">💰</div>
+        <div class="road-body">
+          <div class="road-phase">Fase 4 · 6 meses</div>
+          <h4>Primeras ventas y suscripciones</h4>
+          <p>Lanzamiento comercial en el Biobío con suscripciones de nutrientes activas.</p>
+          <span class="road-tag">Q4</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIOS -->
+<section id="socios" class="socios">
+  <div class="wrap">
+    <div class="socios-inner reveal">
+      <span class="eyebrow" style="justify-content:center">Para potenciales socios</span>
+      <h2>Construyamos la <span class="hl">naturaleza digital</span> del Biobío</h2>
+      <p>Tenemos el producto, el modelo y la tecnología. Buscamos socios que crean en la agricultura urbana inteligente y quieran crecer con nosotros.</p>
+      <div class="socios-seeking">
+        <span class="seek-pill">💵 Inversión</span>
+        <span class="seek-pill">🚚 Distribución</span>
+        <span class="seek-pill">🏭 Fabricación</span>
+      </div>
+      <a href="mailto:contacto@huertaviva.cl" class="socios-cta">Conversemos sobre el proyecto →</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="f-logo"><span class="logo-mark" style="width:24px;height:24px;font-size:13px">🌿</span> HuertaViva</div>
+    <p>Naturaleza Digital · Región del Biobío · Prototipo v1.0</p>
+  </div>
+</footer>
+
+<script>
+// Reveal on scroll
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold: .15, rootMargin: '0px 0px -60px 0px' });
+document.querySelectorAll('.reveal:not(.in)').forEach(el => io.observe(el));
+
+// Nav scroll state
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+});
+</script>
+
+
+</body></html>

@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<!-- saved from url=(0057)file:///C:/Users/ricar/Downloads/huertaviva_simple_1.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HuertaViva — Cultiva sin saber nada de cultivo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --cream:    #F7F4EE;
+  --cream-2:  #EDE9DF;
+  --cream-3:  #E0D9CC;
+  --verde:    #2D7A4F;
+  --verde-2:  #3A9E68;
+  --verde-bg: #EAF4EE;
+  --verde-pale:#F0F8F3;
+  --tierra:   #5C3D1E;
+  --tierra-bg:#FBF5EC;
+  --cielo:    #3B6FA0;
+  --sol:      #E8A320;
+  --sol-bg:   #FEF8EC;
+  --rojo-s:   #C0392B;
+  --texto:    #1A1A14;
+  --texto-2:  #5A5A4A;
+  --texto-3:  #9A9A80;
+  --borde:    #D8D2C4;
+  --blanco:   #FFFFFF;
+  --sombra:   rgba(45, 35, 20, .06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--cream);
+  color: var(--texto);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+::selection { background: var(--verde-bg); color: var(--verde); }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.in { opacity: 1; transform: none; }
+.d1 { transition-delay: .1s; } .d2 { transition-delay: .2s; }
+.d3 { transition-delay: .3s; } .d4 { transition-delay: .4s; }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(247,244,238,.88); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--borde); padding: 14px 0;
+  transition: box-shadow .3s;
+}
+nav.scrolled { box-shadow: 0 2px 16px var(--sombra); }
+.nav-inner { max-width: 1080px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { display: flex; align-items: center; gap: 8px; font-family: 'Lora', serif; font-weight: 700; font-size: 19px; color: var(--verde); letter-spacing: -.3px; text-decoration: none; }
+.nav-logo .lm { width: 32px; height: 32px; background: var(--verde); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a { color: var(--texto-2); text-decoration: none; font-size: 14px; font-weight: 500; transition: color .2s; }
+.nav-links a:hover { color: var(--verde); }
+.nav-btn { padding: 9px 20px; background: var(--verde); color: #fff; border-radius: 30px; font-size: 14px; font-weight: 600; text-decoration: none; transition: background .2s, transform .2s; white-space: nowrap; }
+.nav-btn:hover { background: var(--verde-2); transform: translateY(-1px); }
+@media (max-width: 720px) { .nav-links { display: none; } }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+  padding: 130px 0 80px; position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; top: -120px; right: -180px; z-index: 0;
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, var(--verde-bg), transparent 70%);
+}
+.hero::after {
+  content: ''; position: absolute; bottom: -60px; left: -100px; z-index: 0;
+  width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, var(--tierra-bg), transparent 70%);
+}
+.hero .wrap { position: relative; z-index: 1; }
+
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--verde);
+  background: var(--verde-bg); border: 1px solid rgba(45,122,79,.2);
+  padding: 6px 14px; border-radius: 30px; margin-bottom: 28px;
+}
+.hero-eyebrow .dot { width: 7px; height: 7px; background: var(--verde); border-radius: 50%; animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.hero h1 {
+  font-family: 'Lora', serif;
+  font-size: clamp(38px, 7vw, 76px);
+  font-weight: 700; line-height: 1.06; letter-spacing: -2px;
+  margin-bottom: 22px; max-width: 820px;
+}
+.hero h1 em { font-style: italic; color: var(--verde); }
+
+.hero-sub {
+  font-size: clamp(17px, 2.3vw, 21px); color: var(--texto-2);
+  max-width: 580px; margin-bottom: 40px; font-weight: 400;
+}
+
+.hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 64px; }
+.btn-main {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 16px 28px; background: var(--verde); color: #fff;
+  border-radius: 14px; font-size: 16px; font-weight: 700;
+  text-decoration: none; transition: transform .2s, box-shadow .2s;
+  box-shadow: 0 4px 20px rgba(45,122,79,.25);
+}
+.btn-main:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(45,122,79,.3); }
+.btn-sec {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 16px 28px; background: var(--blanco); color: var(--texto);
+  border: 1.5px solid var(--borde); border-radius: 14px;
+  font-size: 16px; font-weight: 600; text-decoration: none;
+  transition: border-color .2s, background .2s;
+}
+.btn-sec:hover { border-color: var(--verde); background: var(--verde-pale); }
+
+.hero-trust { display: flex; gap: 28px; flex-wrap: wrap; }
+.trust-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--texto-2); }
+.trust-item .ti { font-size: 20px; }
+
+/* ── SECTION BASE ── */
+section { padding: 96px 0; }
+.eyebrow-tag {
+  display: inline-block; font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 2px; color: var(--verde);
+  margin-bottom: 14px;
+}
+.section-h {
+  font-family: 'Lora', serif; font-size: clamp(26px, 4.5vw, 44px);
+  font-weight: 700; letter-spacing: -1px; line-height: 1.15; margin-bottom: 16px;
+}
+.section-h em { font-style: italic; color: var(--verde); }
+.section-p { font-size: 17px; color: var(--texto-2); max-width: 540px; margin-bottom: 48px; }
+.centered { text-align: center; }
+.centered .section-p { margin-left: auto; margin-right: auto; }
+
+/* ── THE PROBLEM (alternating bg) ── */
+.alt-bg { background: var(--blanco); }
+
+.story-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+@media (max-width: 820px) { .story-grid { grid-template-columns: 1fr; } }
+
+.story-card {
+  border-radius: 22px; padding: 36px 32px;
+  position: relative; overflow: hidden;
+}
+.story-card.bad { background: #FFF5F3; border: 1.5px solid rgba(192,57,43,.15); }
+.story-card.good { background: var(--verde-pale); border: 1.5px solid rgba(45,122,79,.2); }
+.story-card .sc-emoji { font-size: 40px; margin-bottom: 18px; display: block; }
+.story-card h3 {
+  font-family: 'Lora', serif; font-size: 22px; font-weight: 700;
+  margin-bottom: 16px; letter-spacing: -.5px;
+}
+.story-card.bad h3 { color: var(--rojo-s); }
+.story-card.good h3 { color: var(--verde); }
+.story-list { list-style: none; }
+.story-list li {
+  font-size: 15px; color: var(--texto-2); padding: 10px 0 10px 28px;
+  position: relative; border-bottom: 1px solid rgba(0,0,0,.06);
+}
+.story-list li:last-child { border-bottom: none; }
+.story-list li::before { position: absolute; left: 0; top: 10px; font-size: 15px; }
+.story-card.bad .story-list li::before { content: '✗'; color: var(--rojo-s); }
+.story-card.good .story-list li::before { content: '✓'; color: var(--verde); font-weight: 700; }
+.story-card.good .story-list li strong { color: var(--verde); }
+
+.big-quote {
+  margin-top: 48px; text-align: center;
+  font-family: 'Lora', serif; font-style: italic;
+  font-size: clamp(20px, 3.5vw, 32px); font-weight: 600;
+  color: var(--texto); line-height: 1.35; max-width: 720px;
+  margin-left: auto; margin-right: auto;
+}
+.big-quote em { color: var(--verde); font-style: normal; }
+
+/* ── HOW IT WORKS ── */
+.steps { display: flex; flex-direction: column; gap: 20px; max-width: 700px; }
+.step-item {
+  display: flex; gap: 20px; align-items: flex-start;
+  background: var(--blanco); border: 1.5px solid var(--borde);
+  border-radius: 18px; padding: 24px;
+  transition: border-color .3s, box-shadow .3s;
+}
+.step-item:hover { border-color: rgba(45,122,79,.4); box-shadow: 0 4px 20px var(--sombra); }
+.step-num {
+  width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+  background: var(--verde-bg); color: var(--verde);
+  font-size: 22px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  font-family: 'Lora', serif;
+}
+.step-body h4 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+.step-body p { font-size: 14px; color: var(--texto-2); }
+
+/* ── ANIMATED TOWER ── */
+.tower-showcase {
+  background: var(--verde-pale); border: 1.5px solid rgba(45,122,79,.2);
+  border-radius: 28px; padding: 48px 36px;
+  display: flex; flex-direction: column; align-items: center; gap: 24px;
+}
+.tower-caption { font-size: 14px; color: var(--texto-2); text-align: center; max-width: 300px; }
+
+/* ── PLANTS ── */
+.plants-intro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; }
+@media (max-width: 820px) { .plants-intro-grid { grid-template-columns: 1fr; } }
+
+.plants-scroll {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+}
+@media (max-width: 420px) { .plants-scroll { grid-template-columns: repeat(2, 1fr); } }
+
+.plant-tile {
+  background: var(--blanco); border: 1.5px solid var(--borde);
+  border-radius: 16px; padding: 18px 12px; text-align: center;
+  transition: transform .25s, border-color .25s, box-shadow .25s; cursor: default;
+}
+.plant-tile:hover { transform: translateY(-4px); border-color: rgba(45,122,79,.4); box-shadow: 0 8px 24px var(--sombra); }
+.plant-tile .pe { font-size: 32px; display: block; margin-bottom: 8px; }
+.plant-tile .pn { font-size: 13px; font-weight: 700; color: var(--texto); }
+.plant-tile .pt { font-size: 11px; color: var(--verde); margin-top: 3px; font-weight: 600; }
+.plant-tile .pd { font-size: 11px; color: var(--texto-3); margin-top: 1px; }
+
+/* ── APP ── */
+.app-section { background: var(--tierra-bg); }
+
+.modes-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+@media (max-width: 820px) { .modes-row { grid-template-columns: 1fr; } }
+
+.mode-box {
+  background: var(--blanco); border: 1.5px solid var(--borde);
+  border-radius: 20px; padding: 30px 24px;
+  position: relative; transition: transform .3s, box-shadow .3s;
+}
+.mode-box:hover { transform: translateY(-4px); box-shadow: 0 12px 32px var(--sombra); }
+.mode-box .mb-face { font-size: 44px; margin-bottom: 16px; display: block; }
+.mode-box .mb-who {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--texto-3); margin-bottom: 6px;
+}
+.mode-box h4 { font-family: 'Lora', serif; font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+.mode-box p { font-size: 14px; color: var(--texto-2); }
+.mode-box .mb-example {
+  margin-top: 18px; padding: 12px 14px; border-radius: 12px;
+  font-size: 13px; font-style: italic; line-height: 1.4;
+}
+.mode-box.m1 .mb-example { background: var(--verde-pale); color: var(--verde); }
+.mode-box.m2 .mb-example { background: #EBF5FF; color: var(--cielo); }
+.mode-box.m3 .mb-example { background: #FFF5EB; color: var(--tierra); }
+
+/* PHONE NOTIF MOCK */
+.notif-mock {
+  background: var(--texto); color: #fff; border-radius: 18px;
+  padding: 16px 18px; max-width: 320px; margin: 28px auto 0;
+  box-shadow: 0 12px 40px rgba(0,0,0,.18);
+}
+.nm-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.nm-icon { width: 26px; height: 26px; background: var(--verde); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.nm-app { font-size: 12px; color: rgba(255,255,255,.6); }
+.nm-time { font-size: 11px; color: rgba(255,255,255,.4); margin-left: auto; }
+.nm-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.nm-body { font-size: 13px; color: rgba(255,255,255,.7); line-height: 1.4; }
+
+/* ── BENEFITS ── */
+.benefits-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+@media (max-width: 600px) { .benefits-grid { grid-template-columns: 1fr; } }
+.benefit-card {
+  background: var(--blanco); border: 1.5px solid var(--borde);
+  border-radius: 18px; padding: 28px 24px; display: flex; gap: 16px; align-items: flex-start;
+  transition: border-color .3s, box-shadow .3s;
+}
+.benefit-card:hover { border-color: rgba(45,122,79,.35); box-shadow: 0 6px 24px var(--sombra); }
+.benefit-card .bc-icon { font-size: 32px; flex-shrink: 0; }
+.benefit-card h4 { font-size: 16px; font-weight: 700; margin-bottom: 5px; }
+.benefit-card p { font-size: 14px; color: var(--texto-2); }
+
+/* ── WHO IS IT FOR ── */
+.for-section { background: var(--blanco); }
+.personas-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 820px) { .personas-grid { grid-template-columns: 1fr; } }
+.persona {
+  background: var(--cream); border: 1.5px solid var(--borde);
+  border-radius: 20px; padding: 28px 22px; text-align: center;
+  transition: transform .25s;
+}
+.persona:hover { transform: translateY(-4px); }
+.persona .pa-face { font-size: 52px; margin-bottom: 14px; display: block; }
+.persona h4 { font-family: 'Lora', serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.persona .pa-desc { font-size: 14px; color: var(--texto-2); margin-bottom: 16px; }
+.persona .pa-reason {
+  font-size: 13px; color: var(--verde); background: var(--verde-pale);
+  padding: 10px 14px; border-radius: 10px; font-weight: 600;
+}
+
+/* ── HARVEST ── */
+.harvest-section { background: var(--verde-pale); }
+.harvest-row { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
+.harvest-row::-webkit-scrollbar { display: none; }
+.harvest-chip {
+  background: var(--blanco); border: 1.5px solid rgba(45,122,79,.2);
+  border-radius: 16px; padding: 18px 20px; flex-shrink: 0;
+  text-align: center; min-width: 130px;
+  transition: transform .2s;
+}
+.harvest-chip:hover { transform: translateY(-3px); }
+.harvest-chip .hc-emoji { font-size: 30px; display: block; margin-bottom: 8px; }
+.harvest-chip .hc-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.harvest-chip .hc-days { font-size: 12px; color: var(--verde); font-weight: 600; }
+
+/* ── FAQ ── */
+.faq-list { display: flex; flex-direction: column; gap: 12px; max-width: 680px; }
+.faq-item {
+  background: var(--blanco); border: 1.5px solid var(--borde); border-radius: 16px;
+  overflow: hidden; transition: border-color .3s;
+}
+.faq-item:hover { border-color: rgba(45,122,79,.35); }
+.faq-q {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 22px; background: none; border: none; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 600;
+  color: var(--texto); text-align: left; gap: 14px;
+}
+.faq-arrow { font-size: 18px; color: var(--verde); flex-shrink: 0; transition: transform .3s; }
+.faq-item.open .faq-arrow { transform: rotate(45deg); }
+.faq-a {
+  max-height: 0; overflow: hidden; transition: max-height .4s ease;
+}
+.faq-item.open .faq-a { max-height: 300px; }
+.faq-a-inner { padding: 0 22px 20px; font-size: 15px; color: var(--texto-2); }
+
+/* ── CTA FINAL ── */
+.cta-section {
+  background: var(--verde); color: #fff; text-align: center;
+  padding: 100px 0; position: relative; overflow: hidden;
+}
+.cta-section::before {
+  content: ''; position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.1), transparent 60%);
+}
+.cta-section h2 {
+  font-family: 'Lora', serif; font-size: clamp(30px, 5.5vw, 52px);
+  font-weight: 700; letter-spacing: -1.5px; margin-bottom: 18px; position: relative;
+}
+.cta-section p { font-size: 18px; opacity: .85; max-width: 480px; margin: 0 auto 36px; position: relative; }
+.btn-white {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 17px 32px; background: #fff; color: var(--verde);
+  border-radius: 14px; font-size: 16px; font-weight: 700; text-decoration: none;
+  transition: transform .2s, box-shadow .2s; position: relative;
+}
+.btn-white:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,.15); }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--texto); color: rgba(255,255,255,.6);
+  padding: 40px 0; text-align: center;
+}
+.footer-logo { display: inline-flex; align-items: center; gap: 8px; font-family: 'Lora', serif; font-weight: 700; font-size: 18px; color: #fff; margin-bottom: 10px; }
+footer p { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="file:///C:/Users/ricar/Downloads/huertaviva_simple_1.html#" class="nav-logo">
+      <span class="lm">🌿</span> HuertaViva
+    </a>
+    <div class="nav-links">
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_simple_1.html#como-funciona">Cómo funciona</a>
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_simple_1.html#plantas">Qué planto</a>
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_simple_1.html#app">La app</a>
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_simple_1.html#para-quien">¿Es para mí?</a>
+    </div>
+    <a href="file:///C:/Users/ricar/Downloads/huertaviva_simple_1.html#contacto" class="nav-btn">Quiero una 🌿</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-eyebrow reveal in">
+      <span class="dot"></span>
+      Desde el Biobío para el mundo 🇨🇱
+    </div>
+    <h1 class="reveal in d1">
+      Cultiva tu propia comida,<br><em>sin saber nada de cultivo.</em>
+    </h1>
+    <p class="hero-sub reveal in d2">
+      HuertaViva es una huerta vertical que se riega sola, avisa en tu celular qué necesita y te dice exactamente cuándo cosechar. Tú solo disfrutas la cosecha.
+    </p>
+    <div class="hero-ctas reveal in d3">
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_simple_1.html#como-funciona" class="btn-main">Cómo funciona →</a>
+      <a href="file:///C:/Users/ricar/Downloads/huertaviva_simple_1.html#plantas" class="btn-sec">¿Qué puedo plantar?</a>
+    </div>
+    <div class="hero-trust reveal in d4">
+      <span class="trust-item"><span class="ti">🌱</span>24 plantas en 1.65 metros</span>
+      <span class="trust-item"><span class="ti">📱</span>App gratis incluida</span>
+      <span class="trust-item"><span class="ti">🤖</span>Se cuida sola</span>
+    </div>
+  </div>
+</header>
+
+<!-- THE PROBLEM / SOLUTION -->
+<section class="alt-bg">
+  <div class="wrap">
+    <div class="reveal centered">
+      <span class="eyebrow-tag">El problema que resolvemos</span>
+      <h2 class="section-h">Querer cultivar en casa<br>no debería ser tan difícil</h2>
+    </div>
+    <div class="story-grid">
+      <div class="story-card bad reveal d1">
+        <span class="sc-emoji">🥀</span>
+        <h3>Antes de HuertaViva</h3>
+        <ul class="story-list">
+          <li>Plantas que mueren sin saber por qué</li>
+          <li>No sé cuándo regar ni cuánto</li>
+          <li>Me fui de viaje y perdí todo</li>
+          <li>El cultivo requiere conocimiento que no tengo</li>
+          <li>Demasiado tiempo para cuidarlas a diario</li>
+        </ul>
+      </div>
+      <div class="story-card good reveal d2">
+        <span class="sc-emoji">🌿</span>
+        <h3>Con HuertaViva</h3>
+        <ul class="story-list">
+          <li>La huerta <strong>se riega sola</strong> todos los días</li>
+          <li>La app te avisa solo cuando algo importa</li>
+          <li>Funciona aunque estés de vacaciones</li>
+          <li>No necesitas saber nada de plantas</li>
+          <li>Te dice el día exacto para cosechar</li>
+        </ul>
+      </div>
+    </div>
+    <p class="big-quote reveal d2">
+      "No vendemos una torre. Vendemos <em>la garantía de que tu cosecha llega</em>."
+    </p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="como-funciona">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow-tag">Cómo funciona</span>
+      <h2 class="section-h">Tres pasos.<br><em>Solo tres.</em></h2>
+      <p class="section-p">Desde que llega la huerta a tu casa hasta que estás comiendo tu primera ensalada, hay tres cosas que hacer.</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:48px; align-items:center;">
+      <div class="steps">
+        <div class="step-item reveal d1">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>La instalas en cualquier rincón</h4>
+            <p>Mide 1.65 metros de alto y cabe en un balcón, cocina o living. La conectas a un enchufe y llenas el depósito de agua.</p>
+          </div>
+        </div>
+        <div class="step-item reveal d2">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>Eliges tus plantas en la app</h4>
+            <p>Abres HuertaViva en tu celular, le dices qué plantas pusiste y la huerta aprende sola sus horarios y necesidades.</p>
+          </div>
+        </div>
+        <div class="step-item reveal d3">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>Esperas la notificación de cosecha</h4>
+            <p>La huerta riega, cuida y monitorea todo. Tú recibes un mensaje cuando algo necesita atención o cuando llegó el día de cosechar.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tower visual -->
+      <div class="tower-showcase reveal d2">
+        <svg width="140" height="300" viewBox="0 0 140 300" fill="none">
+          <defs>
+            <lineargradient id="tvg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2D7A4F" stop-opacity=".5"></stop>
+              <stop offset="1" stop-color="#2D7A4F" stop-opacity=".1"></stop>
+            </lineargradient>
+          </defs>
+          <!-- reservorio -->
+          <ellipse cx="70" cy="282" rx="52" ry="14" fill="#2D7A4F" opacity=".15"></ellipse>
+          <path d="M20 268 Q20 278 70 278 Q120 278 120 268 L116 256 L24 256 Z" fill="#EAF4EE" stroke="#2D7A4F" stroke-opacity=".3"></path>
+          <!-- tubo -->
+          <rect x="57" y="28" width="26" height="234" rx="8" fill="url(#tvg)" stroke="#2D7A4F" stroke-opacity=".35"></rect>
+          <!-- linea agua -->
+          <line x1="70" y1="38" x2="70" y2="252" stroke="#2D7A4F" stroke-width="1.5" stroke-dasharray="4 4" opacity=".4"></line>
+          <!-- niveles -->
+          <g>
+            <circle cx="42" cy="55" r="8" fill="#2D7A4F" opacity=".7"></circle><circle cx="98" cy="55" r="8" fill="#2D7A4F" opacity=".7"></circle>
+            <circle cx="42" cy="88" r="8" fill="#2D7A4F" opacity=".65"></circle><circle cx="98" cy="88" r="8" fill="#2D7A4F" opacity=".65"></circle>
+            <circle cx="42" cy="121" r="8" fill="#2D7A4F" opacity=".6"></circle><circle cx="98" cy="121" r="8" fill="#2D7A4F" opacity=".6"></circle>
+            <circle cx="42" cy="154" r="8" fill="#2D7A4F" opacity=".55"></circle><circle cx="98" cy="154" r="8" fill="#2D7A4F" opacity=".55"></circle>
+            <circle cx="42" cy="187" r="8" fill="#2D7A4F" opacity=".5"></circle><circle cx="98" cy="187" r="8" fill="#2D7A4F" opacity=".5"></circle>
+            <circle cx="42" cy="220" r="8" fill="#2D7A4F" opacity=".45"></circle><circle cx="98" cy="220" r="8" fill="#2D7A4F" opacity=".45"></circle>
+          </g>
+          <!-- labels -->
+          <text x="70" y="14" text-anchor="middle" font-size="9" fill="#2D7A4F" font-family="Plus Jakarta Sans" font-weight="700">8 NIVELES</text>
+          <text x="70" y="296" text-anchor="middle" font-size="9" fill="#2D7A4F" font-family="Plus Jakarta Sans" font-weight="700">AGUA AUTOM.</text>
+        </svg>
+        <p class="tower-caption">24 plantas. 8 pisos. 1.65m de alto. Cabe en tu balcón.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLANTS -->
+<section id="plantas" class="alt-bg">
+  <div class="wrap">
+    <div class="plants-intro-grid">
+      <div class="reveal">
+        <span class="eyebrow-tag">Qué puedes plantar</span>
+        <h2 class="section-h">12 plantas,<br>todas <em>fáciles.</em></h2>
+        <p class="section-p" style="margin-bottom:0">Desde lechuga lista en 30 días hasta fresas que producen todo el año. Todas vienen preconfiguradas en la app: la huerta ya sabe cómo cuidar cada una.</p>
+      </div>
+      <div class="plants-scroll reveal d2">
+        <div class="plant-tile"><span class="pe">🥬</span><div class="pn">Lechuga</div><div class="pt">En 30 días</div><div class="pd">Muy fácil</div></div>
+        <div class="plant-tile"><span class="pe">🌿</span><div class="pn">Albahaca</div><div class="pt">En 25 días</div><div class="pd">Muy fácil</div></div>
+        <div class="plant-tile"><span class="pe">🍃</span><div class="pn">Espinaca</div><div class="pt">En 30 días</div><div class="pd">Muy fácil</div></div>
+        <div class="plant-tile"><span class="pe">🍓</span><div class="pn">Fresa</div><div class="pt">En 90 días</div><div class="pd">Medio</div></div>
+        <div class="plant-tile"><span class="pe">🌱</span><div class="pn">Cilantro</div><div class="pt">En 30 días</div><div class="pd">Muy fácil</div></div>
+        <div class="plant-tile"><span class="pe">🍵</span><div class="pn">Menta</div><div class="pt">En 30 días</div><div class="pd">Muy fácil</div></div>
+        <div class="plant-tile"><span class="pe">🍀</span><div class="pn">Rúcula</div><div class="pt">En 25 días</div><div class="pd">Muy fácil</div></div>
+        <div class="plant-tile"><span class="pe">🥗</span><div class="pn">Acelga</div><div class="pt">En 45 días</div><div class="pd">Fácil</div></div>
+        <div class="plant-tile"><span class="pe">🌾</span><div class="pn">Perejil</div><div class="pt">En 70 días</div><div class="pd">Fácil</div></div>
+        <div class="plant-tile"><span class="pe">🍅</span><div class="pn">Tomate Cherry</div><div class="pt">En 60 días</div><div class="pd">Medio</div></div>
+        <div class="plant-tile"><span class="pe">🥦</span><div class="pn">Kale</div><div class="pt">En 55 días</div><div class="pd">Fácil</div></div>
+        <div class="plant-tile"><span class="pe">🥒</span><div class="pn">Pepino</div><div class="pt">En 50 días</div><div class="pd">Medio</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APP -->
+<section id="app" class="app-section">
+  <div class="wrap">
+    <div class="reveal centered">
+      <span class="eyebrow-tag">La aplicación</span>
+      <h2 class="section-h">La app habla <em>tu idioma,</em><br>no el de las plantas</h2>
+      <p class="section-p">Sin términos científicos. Sin números raros. La app te dice exactamente qué hacer, cuando lo necesitas.</p>
+    </div>
+
+    <div class="modes-row">
+      <div class="mode-box m1 reveal d1">
+        <span class="mb-face">😌</span>
+        <div class="mb-who">Para la mayoría</div>
+        <h4>Modo Tranquilo</h4>
+        <p>La huerta hace todo sola. Solo recibes mensajes cuando algo necesita tu atención.</p>
+        <div class="mb-example">"Tu lechuga está perfecta 🌿 No necesitas hacer nada hoy."</div>
+      </div>
+      <div class="mode-box m2 reveal d2">
+        <span class="mb-face">🔍</span>
+        <div class="mb-who">Para curiosos</div>
+        <h4>Modo Inteligente</h4>
+        <p>Ve cómo van tus plantas, la temperatura y el nivel del agua. Puedes regar con un toque si quieres.</p>
+        <div class="mb-example">"Temperatura: 22°C · Agua: 75% · Albahaca: ¡lista para cosechar!"</div>
+      </div>
+      <div class="mode-box m3 reveal d3">
+        <span class="mb-face">⚙️</span>
+        <div class="mb-who">Para fanáticos</div>
+        <h4>Modo Experto</h4>
+        <p>Todos los datos en tiempo real. Para restaurantes y personas que quieren optimizar cada detalle.</p>
+        <div class="mb-example">"pH: 6.1 · EC: 1.8 mS/cm · Temp. agua: 21°C · Historial 7 días"</div>
+      </div>
+    </div>
+
+    <div class="notif-mock reveal d2">
+      <div class="nm-top">
+        <div class="nm-icon">🌿</div>
+        <span class="nm-app">HuertaViva</span>
+        <span class="nm-time">Ahora</span>
+      </div>
+      <div class="nm-title">🍓 ¡Tus fresas están listas!</div>
+      <div class="nm-body">Llevas 95 días cultivando. Hoy puedes cosechar tus primeras fresas. Te decimos cómo hacerlo 👇</div>
+    </div>
+  </div>
+</section>
+
+<!-- BENEFITS -->
+<section>
+  <div class="wrap">
+    <div class="reveal centered">
+      <span class="eyebrow-tag">Por qué HuertaViva</span>
+      <h2 class="section-h">Lo que cambia<br><em>desde el primer día</em></h2>
+    </div>
+    <div class="benefits-grid">
+      <div class="benefit-card reveal d1">
+        <span class="bc-icon">💧</span>
+        <div><h4>Usa 90% menos agua que un jardín normal</h4><p>El agua circula en ciclo cerrado. Nunca se desperdicia y nunca tienes que calcular cuánto regar.</p></div>
+      </div>
+      <div class="benefit-card reveal d1">
+        <span class="bc-icon">📍</span>
+        <div><h4>Cabe donde quieras</h4><p>Un balcón, la cocina, el living. Solo necesitas 40×40cm de espacio en el piso para tener 24 plantas.</p></div>
+      </div>
+      <div class="benefit-card reveal d2">
+        <span class="bc-icon">⚡</span>
+        <div><h4>Las plantas crecen 3 veces más rápido</h4><p>Sin tierra, las raíces reciben nutrientes directo. Una lechuga lista en 30 días. En tierra demora 90.</p></div>
+      </div>
+      <div class="benefit-card reveal d2">
+        <span class="bc-icon">🌙</span>
+        <div><h4>Funciona aunque te vayas de viaje</h4><p>La huerta se cuida sola. Si algo sale mal, te manda un mensaje. No necesitas a nadie que riegue por ti.</p></div>
+      </div>
+      <div class="benefit-card reveal d3">
+        <span class="bc-icon">🤖</span>
+        <div><h4>La IA diagnostica tus plantas</h4><p>¿Una hoja se ve rara? Saca foto con la app y en segundos te dice qué tiene y cómo solucionarlo.</p></div>
+      </div>
+      <div class="benefit-card reveal d3">
+        <span class="bc-icon">💰</span>
+        <div><h4>Ahorra en la feria cada mes</h4><p>Albahaca, lechuga, cilantro: lo que más compras en la semana, lo produces tú mismo todo el año.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHO IS IT FOR -->
+<section id="para-quien" class="for-section">
+  <div class="wrap">
+    <div class="reveal centered">
+      <span class="eyebrow-tag">¿Es para mí?</span>
+      <h2 class="section-h">Hecha para todo tipo<br>de <em>persona.</em></h2>
+      <p class="section-p">No importa si nunca has cultivado nada. HuertaViva es para personas reales con vidas ocupadas.</p>
+    </div>
+    <div class="personas-grid">
+      <div class="persona reveal d1">
+        <span class="pa-face">👩‍🍳</span>
+        <h4>La cocinera apasionada</h4>
+        <p class="pa-desc">Quiere ingredientes frescos siempre disponibles, sin depender de la feria.</p>
+        <div class="pa-reason">Albahaca y cilantro frescos todos los días 🌿</div>
+      </div>
+      <div class="persona reveal d2">
+        <span class="pa-face">👨‍👩‍👧</span>
+        <h4>La familia con niños</h4>
+        <p class="pa-desc">Quiere enseñar de dónde viene la comida de manera divertida y visual.</p>
+        <div class="pa-reason">Los niños ven crecer lo que comen 🥬</div>
+      </div>
+      <div class="persona reveal d3">
+        <span class="pa-face">🏪</span>
+        <h4>El restaurante o café</h4>
+        <p class="pa-desc">Busca hierbas frescas propias para diferenciarse y reducir costos de insumos.</p>
+        <div class="pa-reason">Producción constante a bajo costo 🍅</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HARVEST TIMELINE -->
+<section class="harvest-section">
+  <div class="wrap">
+    <div class="reveal centered">
+      <span class="eyebrow-tag">Tu primera cosecha</span>
+      <h2 class="section-h">En 25 días<br><em>ya estás cosechando.</em></h2>
+      <p class="section-p">Empieza con plantas de ciclo corto y en menos de un mes tienes tu primera ensalada casera. Aquí van las más rápidas:</p>
+    </div>
+    <div class="harvest-row reveal d2">
+      <div class="harvest-chip"><span class="hc-emoji">🍀</span><div class="hc-name">Rúcula</div><div class="hc-days">25–30 días</div></div>
+      <div class="harvest-chip"><span class="hc-emoji">🌿</span><div class="hc-name">Albahaca</div><div class="hc-days">25–35 días</div></div>
+      <div class="harvest-chip"><span class="hc-emoji">🥬</span><div class="hc-name">Lechuga</div><div class="hc-days">30–40 días</div></div>
+      <div class="harvest-chip"><span class="hc-emoji">🌱</span><div class="hc-name">Cilantro</div><div class="hc-days">30–40 días</div></div>
+      <div class="harvest-chip"><span class="hc-emoji">🍃</span><div class="hc-name">Espinaca</div><div class="hc-days">30–45 días</div></div>
+      <div class="harvest-chip"><span class="hc-emoji">🍵</span><div class="hc-name">Menta</div><div class="hc-days">30–45 días</div></div>
+      <div class="harvest-chip"><span class="hc-emoji">🥒</span><div class="hc-name">Pepino</div><div class="hc-days">50–70 días</div></div>
+      <div class="harvest-chip"><span class="hc-emoji">🍓</span><div class="hc-name">Fresa</div><div class="hc-days">90–120 días</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="alt-bg">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow-tag">Preguntas frecuentes</span>
+      <h2 class="section-h">Lo que siempre<br><em>nos preguntan.</em></h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item reveal d1">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Necesito saber de plantas o tecnología para usarla?
+          <span class="faq-arrow">+</span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">Para nada. La app está diseñada para personas que nunca han cultivado nada. Solo te dice lo que necesitas hacer, en palabras simples, cuando lo necesitas. Nada de términos técnicos.</div>
+        </div>
+      </div>
+      <div class="faq-item reveal d1">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Cuánta agua gasta al mes?
+          <span class="faq-arrow">+</span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">Muy poca. El agua circula en ciclo cerrado: sube, riega las plantas, y vuelve al depósito. Solo pierdes agua por la que absorben las plantas y un poco por evaporación. Usas hasta 90% menos que un jardín tradicional. Rellenas el depósito de 35 litros una vez cada 1–2 semanas.</div>
+        </div>
+      </div>
+      <div class="faq-item reveal d2">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Qué pasa si me voy de vacaciones una semana?
+          <span class="faq-arrow">+</span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">Nada malo. La huerta se cuida sola por varios días. Si el nivel de agua baja demasiado, la app te manda un mensaje para que lo sepa. Para viajes más largos, solo necesitas que alguien agregue agua una vez, cosa que cualquier persona puede hacer en 2 minutos.</div>
+        </div>
+      </div>
+      <div class="faq-item reveal d2">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Funciona en departamento sin jardín?
+          <span class="faq-arrow">+</span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">Perfectamente. La huerta mide 40×40cm de base y cabe en cualquier espacio interior. Funciona en cocina, living o balcón cubierto. Solo necesita luz natural o artificial, y un enchufe cercano para la bomba de agua.</div>
+        </div>
+      </div>
+      <div class="faq-item reveal d3">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿La app funciona sin internet en casa?
+          <span class="faq-arrow">+</span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">Sí. La huerta tiene un cerebro propio (el ESP32) que funciona de forma independiente y sigue regando aunque se caiga el WiFi. Cuando vuelve el internet, se sincroniza automáticamente con la app y te muestra todo lo que pasó.</div>
+        </div>
+      </div>
+      <div class="faq-item reveal d3">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Puedo cambiar las plantas cuando quiera?
+          <span class="faq-arrow">+</span>
+        </button>
+        <div class="faq-a">
+          <div class="faq-a-inner">Sí, cuando quieras. Cosechas una planta, sacas la canastilla, pones una nueva plántula, y en la app le dices qué cambiaste. La huerta se reconfigura sola para cuidar la nueva planta. Todo el ciclo se puede repetir indefinidamente.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section id="contacto" class="cta-section">
+  <div class="wrap">
+    <div class="reveal">
+      <h2>¿Lista para tu primera cosecha?</h2>
+      <p>Únete a la lista de espera y sé de los primeros en tener una HuertaViva en tu hogar.</p>
+      <a href="mailto:hola@huertaviva.cl" class="btn-white">Quiero la mía → 🌿</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="footer-logo"><span style="font-size:20px">🌿</span> HuertaViva</div>
+    <p>Naturaleza Digital · Región del Biobío · hola@huertaviva.cl</p>
+  </div>
+</footer>
+
+<script>
+// Reveal on scroll
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold: .12, rootMargin: '0px 0px -50px 0px' });
+document.querySelectorAll('.reveal:not(.in)').forEach(el => io.observe(el));
+
+// Nav scroll
+window.addEventListener('scroll', () => {
+  document.getElementById('nav').classList.toggle('scrolled', scrollY > 30);
+});
+
+// FAQ
+function toggleFaq(btn) {
+  const item = btn.parentElement;
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+</script>
+
+
+</body></html>

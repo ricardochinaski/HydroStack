@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "author": "HidroSmart",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0 },
+    { "type": "wokwi-potentiometer", "id": "ph-sensor", "top": -300, "left": -80, "attrs": { "value": "50" } },
+    { "type": "wokwi-potentiometer", "id": "ec-sensor", "top": -300, "left": 200, "attrs": { "value": "30" } },
+    { "type": "wokwi-ssd1306", "id": "oled1", "top": 100, "left": 250 },
+    { "type": "wokwi-relay-module", "id": "relayNut", "top": -60, "left": -260 },
+    { "type": "wokwi-relay-module", "id": "relayPh", "top": 100, "left": -260 },
+    { "type": "wokwi-relay-module", "id": "relayLed", "top": 260, "left": -260 }
+  ],
+  "connections": [
+    [ "ph-sensor:SIG", "esp:34", "orange", [] ],
+    [ "ph-sensor:GND", "esp:GND.1", "black", [] ],
+    [ "ph-sensor:VCC", "esp:3V3", "red", [] ],
+
+    [ "ec-sensor:SIG", "esp:35", "orange", [] ],
+    [ "ec-sensor:GND", "esp:GND.2", "black", [] ],
+    [ "ec-sensor:VCC", "esp:3V3", "red", [] ],
+
+    [ "esp:25", "relayNut:IN", "green", [] ],
+    [ "esp:3V3", "relayNut:VCC", "red", [] ],
+    [ "esp:GND.3", "relayNut:GND", "black", [] ],
+
+    [ "esp:26", "relayPh:IN", "blue", [] ],
+    [ "esp:3V3", "relayPh:VCC", "red", [] ],
+    [ "esp:GND.3", "relayPh:GND", "black", [] ],
+
+    [ "esp:27", "relayLed:IN", "yellow", [] ],
+    [ "esp:3V3", "relayLed:VCC", "red", [] ],
+    [ "esp:GND.3", "relayLed:GND", "black", [] ],
+
+    [ "esp:21", "oled1:SDA", "green", [] ],
+    [ "esp:22", "oled1:SCL", "blue", [] ],
+    [ "esp:3V3", "oled1:VCC", "red", [] ],
+    [ "esp:GND.3", "oled1:GND", "black", [] ]
+  ]
+}

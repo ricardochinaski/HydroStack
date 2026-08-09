@@ -1,0 +1,62 @@
+name: huerta_viva_app
+description: "HidroSmart — App para huerta vertical hidropónica controlada por ESP32. Modos Tranquilo, Inteligente y Experto."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Estado y navegación
+  flutter_riverpod: ^2.6.1
+  go_router: ^14.6.2
+
+  # UI
+  google_fonts: ^6.2.1
+  fl_chart: ^0.69.2
+
+  # Persistencia local
+  shared_preferences: ^2.3.3
+
+  # Funcionalidades (mock-friendly, usadas de forma defensiva)
+  image_picker: ^1.1.2
+
+  # Comunicación con Wokwi (simulador ESP32)
+  web_socket_channel: ^3.0.1
+
+  # Firebase (auth + Firestore + Realtime Database para telemetría del hardware)
+  firebase_core: ^3.8.0
+  firebase_auth: ^5.3.4
+  cloud_firestore: ^5.5.1
+  firebase_database: ^11.1.0
+  google_sign_in: ^6.2.2
+
+  # Notificaciones locales del sistema
+  flutter_local_notifications: ^18.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/icon_plant/
+    - assets/images/icon_parametros/
+    - assets/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  web:
+    generate: true
+  image_path: "assets/images/app_icon.png"
+  adaptive_icon_background: "#4CAF50"
+  adaptive_icon_foreground: "assets/images/app_icon.png"
+  remove_alpha_ios: true

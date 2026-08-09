@@ -1,0 +1,415 @@
+import '../models/planta.dart';
+
+class PlantasData {
+  static const List<Planta> plantas = [
+    Planta(
+      id: 'lechuga',
+      name: 'Lechuga',
+      latin: 'Lactuca sativa',
+      emoji: '🥬',
+      category: 'hoja',
+      difficulty: 'facil',
+      diffLabel: 'Fácil',
+      description: 'La reina de la hidroponía. Crecimiento ultrarrápido, ideal para comenzar.',
+      harvestDays: '30–40 días',
+      params: PlantaParams(
+        ph: '5.5–6.5',
+        ec: '1.2–1.8',
+        temp: '13–21°C',
+        luz: '14–16h',
+        humedad: '60–70%',
+        riego: 'Continuo',
+      ),
+      nutrients: Nutrientes(n: 85, p: 40, k: 60, ca: 70, mg: 35),
+      timeline: [
+        TimelineItem(week: 'Días 1–5', title: 'Germinación', desc: 'En esponja o lana de roca. Mantener húmedo. Temperatura 20°C.'),
+        TimelineItem(week: 'Días 6–14', title: 'Plántula', desc: 'Trasplantar cuando raíces tienen 2-3cm. Iniciar solución nutritiva al 50%.'),
+        TimelineItem(week: 'Días 15–25', title: 'Crecimiento activo', desc: 'Nutrientes al 100%. Riego continuo. Revisar pH cada 2 días.'),
+        TimelineItem(week: 'Días 26–40', title: 'Cosecha', desc: 'Cosechar hojas externas primero para prolongar producción.'),
+      ],
+      alerts: [
+        AlertaPlanta(type: 'danger', icon: '🌡️', title: 'Temperatura alta', desc: 'Más de 26°C causa amargura y florece prematuramente.'),
+        AlertaPlanta(type: 'warn', icon: '💧', title: 'pH fuera de rango', desc: 'pH alto bloquea absorción de hierro.'),
+        AlertaPlanta(type: 'info', icon: '🌊', title: 'Cambio de agua', desc: 'Cambiar solución nutritiva cada 2 semanas.'),
+      ],
+      sensors: [
+        SensorPlanta(name: 'Sensor pH', desc: 'Verificar cada 2 días', range: '5.5–6.5'),
+        SensorPlanta(name: 'Sensor EC', desc: 'Concentración nutrientes', range: '1.2–1.8 mS'),
+        SensorPlanta(name: 'Temperatura agua', desc: 'Temperatura solución', range: '18–22°C'),
+        SensorPlanta(name: 'Luz (lux)', desc: 'Horas luz diarias', range: '14–16h'),
+      ],
+      tip: 'Ideales para ventas: lechuga mantecosa, romana y lollo rossa. Maduran en 30 días.',
+    ),
+    Planta(
+      id: 'albahaca',
+      name: 'Albahaca',
+      latin: 'Ocimum basilicum',
+      emoji: '🌿',
+      category: 'hierba',
+      difficulty: 'facil',
+      diffLabel: 'Fácil',
+      description: 'Hierba aromática de alto valor comercial. Crecimiento constante si se poda.',
+      harvestDays: '25–35 días',
+      params: PlantaParams(
+        ph: '5.5–6.5',
+        ec: '1.0–1.6',
+        temp: '20–30°C',
+        luz: '14–16h',
+        humedad: '60–70%',
+        riego: 'Cada 2h',
+      ),
+      nutrients: Nutrientes(n: 90, p: 45, k: 55, ca: 80, mg: 40),
+      timeline: [
+        TimelineItem(week: 'Días 1–7', title: 'Germinación', desc: 'Semillas en esponja húmeda. Temperatura mínima 20°C.'),
+        TimelineItem(week: 'Días 8–20', title: 'Desarrollo inicial', desc: 'Trasplantar con 4 hojas verdaderas. Iniciar nutrientes nitrogenados.'),
+        TimelineItem(week: 'Días 21–35', title: 'Primera cosecha', desc: 'Pinzar la punta principal para estimular ramas laterales.'),
+        TimelineItem(week: 'Semanas 5+', title: 'Producción continua', desc: 'Cosechar semanalmente las hojas superiores.'),
+      ],
+      alerts: [
+        AlertaPlanta(type: 'danger', icon: '🌸', title: 'Floración prematura', desc: 'Si aparecen flores, cortar INMEDIATAMENTE.'),
+        AlertaPlanta(type: 'warn', icon: '🌡️', title: 'Temperatura baja', desc: 'Bajo 15°C el crecimiento se detiene.'),
+        AlertaPlanta(type: 'info', icon: '✂️', title: 'Poda frecuente', desc: 'Podar cada 7–10 días duplica la producción.'),
+      ],
+      sensors: [
+        SensorPlanta(name: 'Temperatura aire', desc: 'Nunca < 15°C', range: '20–30°C'),
+        SensorPlanta(name: 'Sensor pH', desc: 'Revisar 2x/semana', range: '5.5–6.5'),
+        SensorPlanta(name: 'Sensor EC', desc: 'Rico en nitrógeno', range: '1.0–1.6 mS'),
+        SensorPlanta(name: 'Humedad relativa', desc: 'Evitar hongos', range: '60–70%'),
+      ],
+      tip: 'Valor comercial alto. 100g de albahaca fresca = \$2-5 USD.',
+    ),
+    Planta(
+      id: 'espinaca',
+      name: 'Espinaca',
+      latin: 'Spinacia oleracea',
+      emoji: '🍃',
+      category: 'hoja',
+      difficulty: 'facil',
+      diffLabel: 'Fácil',
+      description: 'Resistente a cambios de temperatura. Rica en hierro y muy demandada.',
+      harvestDays: '30–45 días',
+      params: PlantaParams(
+        ph: '5.5–6.6', ec: '1.2–1.8', temp: '10–20°C', luz: '12–14h', humedad: '60–75%', riego: 'Cada 3h',
+      ),
+      nutrients: Nutrientes(n: 80, p: 35, k: 65, ca: 75, mg: 50),
+      timeline: [
+        TimelineItem(week: 'Días 1–6', title: 'Germinación', desc: 'Prefiere temperaturas frescas (15°C).'),
+        TimelineItem(week: 'Días 7–20', title: 'Plántula', desc: '4-6 hojas antes de trasplantar. Tolera bajas temperaturas.'),
+        TimelineItem(week: 'Días 21–40', title: 'Crecimiento', desc: 'Monitorear nitrógeno para hojas oscuras.'),
+        TimelineItem(week: 'Días 40–45', title: 'Cosecha', desc: 'Cosechar hojas externas. El corazón sigue produciendo.'),
+      ],
+      alerts: [
+        AlertaPlanta(type: 'danger', icon: '☀️', title: 'Exceso de calor', desc: 'Más de 25°C causa floración (bolting).'),
+        AlertaPlanta(type: 'warn', icon: '🟡', title: 'Hojas amarillas', desc: 'Indica deficiencia de nitrógeno.'),
+        AlertaPlanta(type: 'info', icon: '❄️', title: 'Tolera frío', desc: 'Resiste hasta 5°C. Ideal para climas variables.'),
+      ],
+      sensors: [
+        SensorPlanta(name: 'Temperatura', desc: 'Mejor en fresco', range: '10–20°C'),
+        SensorPlanta(name: 'Sensor pH', desc: 'Rango amplio', range: '5.5–6.6'),
+        SensorPlanta(name: 'Sensor EC', desc: 'Nutrición moderada', range: '1.2–1.8 mS'),
+        SensorPlanta(name: 'Luz', desc: 'Menos que otras', range: '12–14h'),
+      ],
+      tip: 'Perfecta para clientes que quieren resultados rápidos.',
+    ),
+    Planta(
+      id: 'fresa',
+      name: 'Fresa',
+      latin: 'Fragaria × ananassa',
+      emoji: '🍓',
+      category: 'fruto',
+      difficulty: 'medio',
+      diffLabel: 'Medio',
+      description: 'Fruto estrella. Alta rentabilidad. Requiere más atención.',
+      harvestDays: '90–120 días',
+      params: PlantaParams(
+        ph: '5.5–6.5', ec: '1.2–1.8', temp: '15–25°C', luz: '14–16h', humedad: '65–75%', riego: 'Cada 1h',
+      ),
+      nutrients: Nutrientes(n: 60, p: 70, k: 90, ca: 80, mg: 55),
+      timeline: [
+        TimelineItem(week: 'Semanas 1–2', title: 'Establecimiento', desc: 'Usar plantines. Aclimatar gradualmente.'),
+        TimelineItem(week: 'Semanas 3–6', title: 'Desarrollo vegetativo', desc: 'Nutrientes equilibrados N-P-K.'),
+        TimelineItem(week: 'Semanas 7–10', title: 'Floración', desc: 'Aumentar fósforo y potasio. 14–16h luz.'),
+        TimelineItem(week: 'Semanas 11–16', title: 'Fructificación', desc: 'Polinización manual con pincel.'),
+        TimelineItem(week: 'Continuo', title: 'Producción', desc: 'Una planta produce fresas por 2–3 años.'),
+      ],
+      alerts: [
+        AlertaPlanta(type: 'danger', icon: '🍄', title: 'Botrytis', desc: 'Humedad alta mata la fresa. Ventilar.'),
+        AlertaPlanta(type: 'danger', icon: '🔴', title: 'Deficiencia de K', desc: 'Frutos pequeños y sin sabor.'),
+        AlertaPlanta(type: 'warn', icon: '🌸', title: 'Polinización interior', desc: 'Usar pincel para transferir polen.'),
+        AlertaPlanta(type: 'info', icon: '✂️', title: 'Quitar estolones', desc: 'Cortar tallos rastreros para concentrar energía.'),
+      ],
+      sensors: [
+        SensorPlanta(name: 'Sensor pH', desc: 'Crítico para fresas', range: '5.5–6.5'),
+        SensorPlanta(name: 'Sensor EC', desc: 'Alto en potasio', range: '1.2–1.8 mS'),
+        SensorPlanta(name: 'Humedad relativa', desc: 'Evitar hongos', range: '65–75%'),
+        SensorPlanta(name: 'Temperatura', desc: 'Floración óptima', range: '15–25°C'),
+      ],
+      tip: 'Premium: fresas hidropónicas se venden 2-3x más caras que las de suelo.',
+    ),
+    Planta(
+      id: 'cilantro',
+      name: 'Cilantro',
+      latin: 'Coriandrum sativum',
+      emoji: '🌱',
+      category: 'hierba',
+      difficulty: 'facil',
+      diffLabel: 'Fácil',
+      description: 'Hierba aromática de ciclo muy corto. Produce cada 30–40 días.',
+      harvestDays: '30–40 días',
+      params: PlantaParams(
+        ph: '5.5–6.5', ec: '1.0–1.4', temp: '15–25°C', luz: '12–14h', humedad: '50–70%', riego: 'Cada 2h',
+      ),
+      nutrients: Nutrientes(n: 70, p: 30, k: 45, ca: 40, mg: 25),
+      timeline: [
+        TimelineItem(week: 'Días 1–7', title: 'Germinación', desc: 'Remojar semillas 24h antes.'),
+        TimelineItem(week: 'Días 8–20', title: 'Desarrollo', desc: 'Pocas necesidades nutricionales. Solución al 50%.'),
+        TimelineItem(week: 'Días 21–35', title: 'Cosecha progresiva', desc: 'Cosechar ramas externas.'),
+        TimelineItem(week: 'Días 35–45', title: 'Renovación', desc: 'Sembrar nueva tanda cada 15 días.'),
+      ],
+      alerts: [
+        AlertaPlanta(type: 'danger', icon: '🌸', title: 'Floración rápida en calor', desc: 'Más de 27°C dispara floración.'),
+        AlertaPlanta(type: 'info', icon: '📅', title: 'Siembra escalonada', desc: 'Sembrar cada 2 semanas para cosecha continua.'),
+      ],
+      sensors: [
+        SensorPlanta(name: 'Temperatura', desc: 'Sensible al calor', range: '15–25°C'),
+        SensorPlanta(name: 'Sensor pH', desc: 'Amplio rango', range: '5.5–6.5'),
+        SensorPlanta(name: 'Sensor EC', desc: 'Bajos nutrientes', range: '1.0–1.4 mS'),
+      ],
+      tip: 'Excelente para kits de inicio con lechugas y albahaca.',
+    ),
+    Planta(
+      id: 'rucula',
+      name: 'Rúcula',
+      latin: 'Eruca vesicaria',
+      emoji: '🍀',
+      category: 'hoja',
+      difficulty: 'facil',
+      diffLabel: 'Fácil',
+      description: 'Hoja gourmet de sabor picante. Lista en 25–30 días. Alto valor.',
+      harvestDays: '25–30 días',
+      params: PlantaParams(
+        ph: '6.0–7.0', ec: '0.8–1.6', temp: '10–22°C', luz: '10–14h', humedad: '50–65%', riego: 'Cada 3h',
+      ),
+      nutrients: Nutrientes(n: 65, p: 25, k: 50, ca: 45, mg: 30),
+      timeline: [
+        TimelineItem(week: 'Días 1–4', title: 'Germinación ultrarrápida', desc: 'Brota en 3-4 días.'),
+        TimelineItem(week: 'Días 5–18', title: 'Crecimiento', desc: 'Necesita poco cuidado. Tolera pH alto.'),
+        TimelineItem(week: 'Días 19–30', title: 'Cosecha', desc: 'Cosechar antes de 8 hojas.'),
+      ],
+      alerts: [
+        AlertaPlanta(type: 'warn', icon: '🌡️', title: 'Sabor muy picante', desc: 'El calor aumenta el picante.'),
+        AlertaPlanta(type: 'info', icon: '🍽️', title: 'Mercado gourmet', desc: 'Buscada por restaurantes y chefs.'),
+      ],
+      sensors: [
+        SensorPlanta(name: 'Temperatura', desc: 'Fresca preferida', range: '10–22°C'),
+        SensorPlanta(name: 'Sensor pH', desc: 'Acepta pH mayor', range: '6.0–7.0'),
+        SensorPlanta(name: 'Sensor EC', desc: 'Pocos nutrientes', range: '0.8–1.6 mS'),
+      ],
+      tip: 'La cosecha más rápida. Perfecta para resultados rápidos.',
+    ),
+    Planta(
+      id: 'menta',
+      name: 'Menta',
+      latin: 'Mentha spicata',
+      emoji: '🍵',
+      category: 'hierba',
+      difficulty: 'facil',
+      diffLabel: 'Fácil',
+      description: 'Hierba perenne de crecimiento agresivo. Produce indefinidamente.',
+      harvestDays: '30–45 días',
+      params: PlantaParams(
+        ph: '5.5–6.0', ec: '1.2–2.0', temp: '18–25°C', luz: '12–16h', humedad: '60–80%', riego: 'Cada 2h',
+      ),
+      nutrients: Nutrientes(n: 75, p: 35, k: 60, ca: 50, mg: 40),
+      timeline: [
+        TimelineItem(week: 'Semanas 1–2', title: 'Enraizamiento', desc: 'Mejor desde esquejes. Rápido enraizamiento.'),
+        TimelineItem(week: 'Semanas 3–4', title: 'Establecimiento', desc: 'Comenzar nutrientes completos.'),
+        TimelineItem(week: 'Semana 5+', title: 'Cosecha continua', desc: 'Cosechar 1/3 máximo cada vez.'),
+      ],
+      alerts: [
+        AlertaPlanta(type: 'warn', icon: '🌊', title: 'Crecimiento invasivo', desc: 'Puede dominar el espacio. Podar.'),
+        AlertaPlanta(type: 'info', icon: '♾️', title: 'Planta perenne', desc: 'Un módulo puede durar 2–3 años.'),
+      ],
+      sensors: [
+        SensorPlanta(name: 'Sensor pH', desc: 'Rango ácido', range: '5.5–6.0'),
+        SensorPlanta(name: 'Sensor EC', desc: 'Nutrición media-alta', range: '1.2–2.0 mS'),
+        SensorPlanta(name: 'Temperatura', desc: 'Ambiente cálido', range: '18–25°C'),
+      ],
+      tip: 'Excelente para el módulo de hierbas. Aroma diferenciador.',
+    ),
+    Planta(
+      id: 'acelga',
+      name: 'Acelga',
+      latin: 'Beta vulgaris var. cicla',
+      emoji: '🥗',
+      category: 'hoja',
+      difficulty: 'facil',
+      diffLabel: 'Fácil',
+      description: 'Resistente y muy productiva. Tallos de colores decorativos.',
+      harvestDays: '45–60 días',
+      params: PlantaParams(
+        ph: '6.0–7.0', ec: '1.8–2.3', temp: '10–24°C', luz: '12–16h', humedad: '60–75%', riego: 'Cada 3h',
+      ),
+      nutrients: Nutrientes(n: 70, p: 40, k: 70, ca: 80, mg: 45),
+      timeline: [
+        TimelineItem(week: 'Días 1–7', title: 'Germinación', desc: 'Semillas grandes, germinan bien.'),
+        TimelineItem(week: 'Días 8–25', title: 'Plántula robusta', desc: 'Crecimiento vigoroso.'),
+        TimelineItem(week: 'Días 26–50', title: 'Producción', desc: 'Cosechar hojas externas dejando 4 internas.'),
+      ],
+      alerts: [
+        AlertaPlanta(type: 'info', icon: '🎨', title: 'Variedad decorativa', desc: 'Acelga arcoíris es muy llamativa.'),
+      ],
+      sensors: [
+        SensorPlanta(name: 'Sensor pH', desc: 'Acepta pH alto', range: '6.0–7.0'),
+        SensorPlanta(name: 'Sensor EC', desc: 'Mayor concentración', range: '1.8–2.3 mS'),
+        SensorPlanta(name: 'Temperatura', desc: 'Muy tolerante', range: '10–24°C'),
+      ],
+      tip: 'Acelga arcoíris hace la torre más atractiva visualmente.',
+    ),
+    Planta(
+      id: 'perejil',
+      name: 'Perejil',
+      latin: 'Petroselinum crispum',
+      emoji: '🌾',
+      category: 'hierba',
+      difficulty: 'medio',
+      diffLabel: 'Medio',
+      description: 'Hierba de alta demanda culinaria. Germinación lenta pero producción duradera.',
+      harvestDays: '70–90 días',
+      params: PlantaParams(
+        ph: '5.5–6.0', ec: '0.8–1.8', temp: '15–25°C', luz: '12–16h', humedad: '60–70%', riego: 'Cada 2h',
+      ),
+      nutrients: Nutrientes(n: 75, p: 30, k: 50, ca: 60, mg: 35),
+      timeline: [
+        TimelineItem(week: 'Días 1–14', title: 'Germinación lenta', desc: 'Remojar semillas 24h antes. Paciencia.'),
+        TimelineItem(week: 'Días 15–40', title: 'Desarrollo lento', desc: 'No exceder nutrientes.'),
+        TimelineItem(week: 'Días 41–80', title: 'Aceleración', desc: 'Una vez establecido, se acelera.'),
+        TimelineItem(week: 'Días 80+', title: 'Cosecha continua', desc: 'Producción continua por meses.'),
+      ],
+      alerts: [
+        AlertaPlanta(type: 'warn', icon: '⏰', title: 'Germinación lenta', desc: 'Puede tardar 2–3 semanas.'),
+        AlertaPlanta(type: 'info', icon: '💪', title: 'Muy duradero', desc: 'Una vez establecido, dura meses.'),
+      ],
+      sensors: [
+        SensorPlanta(name: 'Sensor pH', desc: 'Ligeramente ácido', range: '5.5–6.0'),
+        SensorPlanta(name: 'Sensor EC', desc: 'Nutrición baja-media', range: '0.8–1.8 mS'),
+        SensorPlanta(name: 'Temperatura', desc: 'Ambiente templado', range: '15–25°C'),
+      ],
+      tip: 'Inversión a largo plazo: poca atención, muchos meses de cosecha.',
+    ),
+    Planta(
+      id: 'tomate_cherry',
+      name: 'Tomate Cherry',
+      latin: 'Solanum lycopersicum var.',
+      emoji: '🍅',
+      category: 'fruto',
+      difficulty: 'avanzado',
+      diffLabel: 'Avanzado',
+      description: 'El fruto más rentable en hidroponía. Requiere soporte y control preciso.',
+      harvestDays: '60–90 días',
+      params: PlantaParams(
+        ph: '5.5–6.5', ec: '2.0–4.0', temp: '20–28°C', luz: '16–18h', humedad: '65–75%', riego: 'Cada 1h',
+      ),
+      nutrients: Nutrientes(n: 65, p: 80, k: 95, ca: 90, mg: 60),
+      timeline: [
+        TimelineItem(week: 'Semanas 1–2', title: 'Germinación', desc: 'En esponja a 24°C.'),
+        TimelineItem(week: 'Semanas 3–5', title: 'Vegetativo', desc: 'Crecer vertical. Instalar soporte.'),
+        TimelineItem(week: 'Semanas 6–8', title: 'Floración', desc: 'Altos en P y K. Polinizar.'),
+        TimelineItem(week: 'Semanas 9–13', title: 'Fructificación', desc: 'Mantener Ca alto.'),
+        TimelineItem(week: 'Semanas 13+', title: 'Cosecha continua', desc: 'Cosechar cuando 70% rojo.'),
+      ],
+      alerts: [
+        AlertaPlanta(type: 'danger', icon: '🟫', title: 'Pudrición apical', desc: 'Deficiencia de calcio.'),
+        AlertaPlanta(type: 'danger', icon: '🕷️', title: 'Araña roja', desc: 'Revisar hojas semanalmente.'),
+        AlertaPlanta(type: 'warn', icon: '🌸', title: 'Polinización manual', desc: 'Vibrar flores con cepillo.'),
+        AlertaPlanta(type: 'info', icon: '📏', title: 'Soporte obligatorio', desc: 'La planta puede superar 1.5m.'),
+      ],
+      sensors: [
+        SensorPlanta(name: 'Sensor pH', desc: 'Control preciso', range: '5.5–6.5'),
+        SensorPlanta(name: 'Sensor EC', desc: 'Alta concentración', range: '2.0–4.0 mS'),
+        SensorPlanta(name: 'Temperatura', desc: 'Cálido para florecer', range: '20–28°C'),
+        SensorPlanta(name: 'Humedad', desc: 'Evitar hongos', range: '65–75%'),
+      ],
+      tip: 'Los tomates cherry hidropónicos pueden ser 3x más dulces.',
+    ),
+    Planta(
+      id: 'kale',
+      name: 'Kale / Col Rizada',
+      latin: 'Brassica oleracea var. sabellica',
+      emoji: '🥦',
+      category: 'hoja',
+      difficulty: 'medio',
+      diffLabel: 'Medio',
+      description: 'Superfood de alto valor nutricional. Muy llamativa visualmente.',
+      harvestDays: '55–75 días',
+      params: PlantaParams(
+        ph: '5.5–6.5', ec: '1.25–1.75', temp: '13–21°C', luz: '12–16h', humedad: '60–70%', riego: 'Cada 3h',
+      ),
+      nutrients: Nutrientes(n: 80, p: 45, k: 70, ca: 85, mg: 55),
+      timeline: [
+        TimelineItem(week: 'Días 1–7', title: 'Germinación', desc: 'Rápida: 4–6 días.'),
+        TimelineItem(week: 'Días 8–30', title: 'Desarrollo foliar', desc: 'Hojas rizadas en semana 3.'),
+        TimelineItem(week: 'Días 31–60', title: 'Maduración', desc: 'El frío mejora el sabor.'),
+        TimelineItem(week: 'Días 60+', title: 'Cosecha continua', desc: 'De afuera hacia adentro.'),
+      ],
+      alerts: [
+        AlertaPlanta(type: 'warn', icon: '🐛', title: 'Sensible a plagas', desc: 'Pulgones y mariposa blanca.'),
+        AlertaPlanta(type: 'info', icon: '❄️', title: 'Frío mejora sabor', desc: 'Helada suave lo endulza.'),
+      ],
+      sensors: [
+        SensorPlanta(name: 'Temperatura', desc: 'Prefiere fresco', range: '13–21°C'),
+        SensorPlanta(name: 'Sensor pH', desc: 'Rango moderado', range: '5.5–6.5'),
+        SensorPlanta(name: 'Sensor EC', desc: 'Alta en Ca', range: '1.25–1.75 mS'),
+      ],
+      tip: 'El kale es tendencia en mercados premium y juguerías.',
+    ),
+    Planta(
+      id: 'pepino',
+      name: 'Pepino',
+      latin: 'Cucumis sativus',
+      emoji: '🥒',
+      category: 'fruto',
+      difficulty: 'avanzado',
+      diffLabel: 'Avanzado',
+      description: 'Fruto de alta producción. Crece rápido pero necesita soporte.',
+      harvestDays: '50–70 días',
+      params: PlantaParams(
+        ph: '5.5–6.0', ec: '1.7–2.5', temp: '22–28°C', luz: '14–18h', humedad: '70–80%', riego: 'Cada 1h',
+      ),
+      nutrients: Nutrientes(n: 70, p: 65, k: 85, ca: 75, mg: 50),
+      timeline: [
+        TimelineItem(week: 'Días 1–5', title: 'Germinación rápida', desc: '22–25°C óptimo. Brotan en 3-5 días.'),
+        TimelineItem(week: 'Días 6–25', title: 'Crecimiento vigoroso', desc: 'Instalar soporte inmediatamente.'),
+        TimelineItem(week: 'Días 26–45', title: 'Floración y polinización', desc: 'Polinizar manualmente en interiores.'),
+        TimelineItem(week: 'Días 50–70', title: 'Cosecha', desc: 'Cosechar pepinos jóvenes (15cm).'),
+      ],
+      alerts: [
+        AlertaPlanta(type: 'danger', icon: '💧', title: 'Oídio (hongo blanco)', desc: 'Mantener buena ventilación.'),
+        AlertaPlanta(type: 'warn', icon: '📏', title: 'Soporte fuerte', desc: 'El pepino pesa. Estructura resistente.'),
+      ],
+      sensors: [
+        SensorPlanta(name: 'Temperatura', desc: 'Necesita calor', range: '22–28°C'),
+        SensorPlanta(name: 'Sensor pH', desc: 'Ligeramente ácido', range: '5.5–6.0'),
+        SensorPlanta(name: 'Sensor EC', desc: 'Nutrición media-alta', range: '1.7–2.5 mS'),
+        SensorPlanta(name: 'Humedad', desc: 'Ventilación clave', range: '70–80%'),
+      ],
+      tip: 'Crece 30-50% más rápido que en tierra. Ideal para demostrar tecnología.',
+    ),
+  ];
+
+  static Planta? getById(String id) {
+    try {
+      return plantas.firstWhere((p) => p.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static List<Planta> getByCategory(String category) {
+    return plantas.where((p) => p.category == category).toList();
+  }
+
+  static List<Planta> getByDifficulty(String difficulty) {
+    return plantas.where((p) => p.difficulty == difficulty).toList();
+  }
+}

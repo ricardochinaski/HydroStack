@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<!-- saved from url=(0064)file:///C:/Users/ricar/Downloads/lista_compras_chile_vs_ali.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lista de Compras — Chile vs AliExpress</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --chile: #D52B1E;
+    --chile-bg: #FEF2F2;
+    --ali: #FF6900;
+    --ali-bg: #FFF7ED;
+    --verde: #16A34A;
+    --verde-bg: #DCFCE7;
+    --morado: #7C3AED;
+    --morado-bg: #EDE9FE;
+    --tierra: #1C1917;
+    --arena: #FAFAF9;
+    --gris: #6B7280;
+    --borde: #E5E7EB;
+    --blanco: #FFFFFF;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Space Grotesk', sans-serif; background: var(--arena); color: var(--tierra); }
+
+  header {
+    background: var(--tierra);
+    padding: 16px 20px;
+  }
+  .header-row { display: flex; align-items: center; gap: 10px; }
+  header h1 { font-size: 16px; color: white; font-weight: 700; }
+  header p { font-size: 10px; font-family: 'Space Mono', monospace; color: #A8A29E; margin-top: 2px; }
+
+  /* FLAGS ROW */
+  .flags-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--borde);
+    border-bottom: 2px solid var(--borde);
+  }
+  .flag-cell {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .flag-cell.chile { background: var(--chile-bg); }
+  .flag-cell.ali { background: var(--ali-bg); }
+  .flag-cell .flag { font-size: 20px; }
+  .flag-cell .info strong { font-size: 12px; display: block; }
+  .flag-cell .info span { font-size: 10px; color: var(--gris); }
+
+  /* VERSION TABS */
+  .tabs {
+    display: flex;
+    background: #F3F4F6;
+    border-bottom: 2px solid var(--borde);
+  }
+  .tab {
+    flex: 1;
+    padding: 11px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    color: var(--gris);
+    transition: all 0.2s;
+  }
+  .tab.eco.active { color: var(--verde); border-bottom-color: var(--verde); background: var(--arena); }
+  .tab.pro.active { color: var(--morado); border-bottom-color: var(--morado); background: var(--arena); }
+
+  .content { display: none; }
+  .content.active { display: block; }
+
+  /* TOTALS */
+  .totals-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--borde);
+    margin-bottom: 0;
+  }
+  .total-cell {
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .total-cell.chile-t { background: #FFF5F5; }
+  .total-cell.ali-t { background: #FFF8F0; }
+  .total-cell.save-t { background: #F0FFF4; }
+  .total-cell .t-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gris); font-family: 'Space Mono', monospace; }
+  .total-cell .t-val { font-size: 18px; font-weight: 700; font-family: 'Space Mono', monospace; line-height: 1.2; margin-top: 2px; }
+  .total-cell.chile-t .t-val { color: var(--chile); }
+  .total-cell.ali-t .t-val { color: var(--ali); }
+  .total-cell.save-t .t-val { color: var(--verde); }
+  .total-cell .t-sub { font-size: 9px; color: var(--gris); margin-top: 1px; }
+
+  /* ITEMS */
+  .section-label {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 10px 16px 6px;
+    color: var(--gris);
+    background: #F9FAFB;
+    border-bottom: 1px solid var(--borde);
+    border-top: 2px solid var(--borde);
+    margin-top: 4px;
+  }
+
+  .item-card {
+    background: white;
+    border-bottom: 1px solid var(--borde);
+    padding: 12px 14px;
+  }
+  .item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .item-info { flex: 1; }
+  .item-emoji { font-size: 18px; margin-right: 6px; }
+  .item-name { font-size: 13px; font-weight: 700; display: inline; }
+  .item-model { font-size: 10px; font-family: 'Space Mono', monospace; color: var(--morado); display: block; margin-top: 2px; }
+  .item-desc { font-size: 11px; color: var(--gris); line-height: 1.4; margin-top: 3px; }
+
+  /* PRICE COMPARISON */
+  .price-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .price-box {
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .price-box.chile { background: var(--chile-bg); border: 1px solid #FECACA; }
+  .price-box.ali { background: var(--ali-bg); border: 1px solid #FED7AA; }
+  .price-box .pb-flag { font-size: 12px; }
+  .price-box .pb-label { font-size: 9px; color: var(--gris); display: block; margin-bottom: 1px; }
+  .price-box .pb-price { font-size: 14px; font-weight: 700; font-family: 'Space Mono', monospace; }
+  .price-box.chile .pb-price { color: var(--chile); }
+  .price-box.ali .pb-price { color: var(--ali); }
+  .price-box .pb-note { font-size: 9px; color: var(--gris); margin-top: 1px; }
+
+  /* LINKS */
+  .links-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .buy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.15s;
+  }
+  .buy-btn:active { opacity: 0.7; }
+  .buy-btn.chile { background: var(--chile); color: white; }
+  .buy-btn.ali { background: var(--ali); color: white; }
+  .buy-btn.ml { background: #FFE600; color: #333; }
+  .buy-btn.info { background: #E0E7FF; color: #3730A3; }
+
+  /* SAVINGS BADGE */
+  .save-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--verde-bg);
+    color: var(--verde);
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'Space Mono', monospace;
+    margin-left: 6px;
+  }
+
+  /* WAIT BADGE */
+  .wait-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #FEF3C7;
+    color: #92400E;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 600;
+    margin-left: 4px;
+  }
+
+  /* TIPS */
+  .tip-box {
+    margin: 0 14px 14px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .tip-box.verde { background: var(--verde-bg); color: #14532D; border: 1px solid #86EFAC; }
+  .tip-box.naranja { background: var(--ali-bg); color: #7C2D12; border: 1px solid #FED7AA; }
+  .tip-box.morado { background: var(--morado-bg); color: #4C1D95; border: 1px solid #C4B5FD; }
+  .tip-box strong { display: block; margin-bottom: 3px; font-size: 12px; }
+
+  /* TIENDA INFO */
+  .store-card {
+    margin: 0 14px 10px;
+    background: white;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--borde);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .store-icon { font-size: 24px; flex-shrink: 0; }
+  .store-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .store-detail { font-size: 11px; color: var(--gris); line-height: 1.5; }
+  .store-link {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 11px;
+    color: var(--chile);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  /* STRATEGY */
+  .strategy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 14px;
+  }
+  .strategy-card {
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid;
+  }
+  .strategy-card.ali-s { background: var(--ali-bg); border-color: #FED7AA; }
+  .strategy-card.chile-s { background: var(--chile-bg); border-color: #FECACA; }
+  .strategy-card h4 { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+  .strategy-card ul { list-style: none; padding: 0; }
+  .strategy-card ul li { font-size: 11px; color: var(--gris); padding: 2px 0 2px 14px; position: relative; line-height: 1.4; }
+  .strategy-card ul li::before { content: '→'; position: absolute; left: 0; color: var(--ali); font-size: 10px; }
+  .strategy-card.chile-s ul li::before { color: var(--chile); }
+
+  .pro-badge { background: var(--morado-bg); color: var(--morado); font-size: 9px; padding: 1px 5px; border-radius: 4px; font-weight: 700; margin-left: 4px; vertical-align: middle; }
+  .eco-badge { background: var(--verde-bg); color: var(--verde); font-size: 9px; padding: 1px 5px; border-radius: 4px; font-weight: 700; margin-left: 4px; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <span style="font-size:22px">🛒</span>
+    <div>
+      <h1>Lista de Compras — Electrónica</h1>
+      <p>CHILE vs ALIEXPRESS · PRECIOS · LINKS · CONSEJOS</p>
+    </div>
+  </div>
+</header>
+
+<!-- FLAGS -->
+<div class="flags-row">
+  <div class="flag-cell chile">
+    <span class="flag">🇨🇱</span>
+    <div class="info">
+      <strong>Compra en Chile</strong>
+      <span>Rápido (1–3 días) · Mayor precio</span>
+    </div>
+  </div>
+  <div class="flag-cell ali">
+    <span class="flag">🇨🇳</span>
+    <div class="info">
+      <strong>AliExpress</strong>
+      <span>15–35 días · Ahorro 60–80%</span>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab eco active" onclick="showVersion(&#39;eco&#39;, this)">🌱 Versión ECO</div>
+  <div class="tab pro" onclick="showVersion(&#39;pro&#39;, this)">🚀 Versión PRO</div>
+</div>
+
+<!-- ========= ECO VERSION ========= -->
+<div id="v-eco" class="content active">
+
+  <!-- TOTALS ECO -->
+  <div class="totals-bar">
+    <div class="total-cell chile-t">
+      <div class="t-label">🇨🇱 Chile total</div>
+      <div class="t-val">$87 USD</div>
+      <div class="t-sub">~$82.000 CLP</div>
+    </div>
+    <div class="total-cell ali-t">
+      <div class="t-label">🇨🇳 AliExpress</div>
+      <div class="t-val">$28 USD</div>
+      <div class="t-sub">envío incluido</div>
+    </div>
+    <div class="total-cell save-t">
+      <div class="t-label">💰 Ahorro</div>
+      <div class="t-val">$59</div>
+      <div class="t-sub">68% más barato</div>
+    </div>
+  </div>
+
+  <!-- SECTION: CEREBRO -->
+  <div class="section-label">// 01 · CEREBRO DEL SISTEMA</div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">🧠</span>
+        <span class="item-name">ESP32 WROOM-32 DevKit</span>
+        <span class="item-model">ESP32-DEVKITC-V4 · 38 pines</span>
+        <div class="item-desc">Microcontrolador con WiFi + Bluetooth. El cerebro de todo el sistema. Compatible con Arduino IDE.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">$8.148 CLP</div>
+        <div class="pb-note">~$8.7 USD · ElectroArt</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$3.50 USD</div>
+        <div class="pb-note">envío gratis <span class="wait-badge">⏱ 20 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://www.electroart.cl/277/esp32-wroom-32d/" target="_blank" class="buy-btn chile">🇨🇱 ElectroArt</a>
+      <a href="https://mcielectronics.cl/shop/product/tarjeta-de-desarrollo-de-esp-32-esp32-29541/" target="_blank" class="buy-btn chile">🇨🇱 MCI</a>
+      <a href="https://www.aliexpress.com/w/wholesale-esp32-wroom-32-devkit.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+      <a href="https://listado.mercadolibre.cl/esp-32" target="_blank" class="buy-btn ml">ML Chile</a>
+    </div>
+  </div>
+
+  <!-- SECTION: SENSORES -->
+  <div class="section-label">// 02 · SENSORES AMBIENTALES</div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">🌡️</span>
+        <span class="item-name">DHT22 (AM2302)</span>
+        <span class="item-model">Temperatura + Humedad Ambiente</span>
+        <div class="item-desc">Mide temperatura (±0.5°C) y humedad del aire. Más preciso que el DHT11. Ya incluye resistencia pull-up en módulo breakout.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$5.500 CLP</div>
+        <div class="pb-note">~$5.8 USD · MCI / Altronics</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$1.20 USD</div>
+        <div class="pb-note">módulo con pines <span class="wait-badge">⏱ 20 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://mcielectronics.cl/shop/product/sensor-digital-de-temperatura-y-modulo-am2302-dht2-29682/" target="_blank" class="buy-btn chile">🇨🇱 MCI</a>
+      <a href="https://altronics.cl/sensor-temperatura-humedad-dht22" target="_blank" class="buy-btn chile">🇨🇱 Altronics</a>
+      <a href="https://www.aliexpress.com/w/wholesale-dht22-am2302-module.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">🌊</span>
+        <span class="item-name">DS18B20 Impermeable</span>
+        <span class="item-model">Sonda temperatura agua · cable 1m</span>
+        <div class="item-desc">Temperatura del agua del reservorio. Sellado, sumergible. Protocolo 1-Wire. Requiere resistencia 4.7kΩ pull-up.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$6.000 CLP</div>
+        <div class="pb-note">~$6.4 USD · MCI / Altronics</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$1.50 USD</div>
+        <div class="pb-note">cable 1m incluido <span class="wait-badge">⏱ 20 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://mcielectronics.cl/shop/product/sensor-de-temperatura-ds18b20-con-punta-metalica-14mts-10317/" target="_blank" class="buy-btn chile">🇨🇱 MCI</a>
+      <a href="https://altronics.cl/sensor-sonda-temperatura-ds18b20" target="_blank" class="buy-btn chile">🇨🇱 Altronics</a>
+      <a href="https://www.aliexpress.com/w/wholesale-ds18b20-waterproof-temperature-sensor.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">💧</span>
+        <span class="item-name">Sensor Humedad Suelo Capacitivo</span>
+        <span class="item-model">Capacitive Soil Moisture Sensor v1.2</span>
+        <div class="item-desc">No se oxida (a diferencia del resistivo). Mide humedad del sustrato. Salida analógica 0–3V. Compra pack de 2 para mejor precio.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$4.500 CLP</div>
+        <div class="pb-note">~$4.8 USD · MCI / ML</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$0.80 USD</div>
+        <div class="pb-note">pack ×5 ~$3 USD <span class="wait-badge">⏱ 20 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://listado.mercadolibre.cl/sensor-humedad-suelo-capacitivo" target="_blank" class="buy-btn ml">ML Chile</a>
+      <a href="https://www.aliexpress.com/w/wholesale-capacitive-soil-moisture-sensor-v1.2.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">📏</span>
+        <span class="item-name">HC-SR04 Ultrasónico</span>
+        <span class="item-model">Sensor nivel de agua · sin contacto</span>
+        <div class="item-desc">Detecta nivel de agua en el reservorio por ultrasonido. Sin contacto con el líquido. Trabaja a 5V. Usar divisor de voltaje para el pin ECHO.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$3.500 CLP</div>
+        <div class="pb-note">~$3.7 USD · MCI / Altronics</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$0.50 USD</div>
+        <div class="pb-note">pack ×5 ~$2 USD <span class="wait-badge">⏱ 20 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://altronics.cl/index.php?route=product/search&amp;search=HC-SR04" target="_blank" class="buy-btn chile">🇨🇱 Altronics</a>
+      <a href="https://mcielectronics.cl/shop/?s=HC-SR04" target="_blank" class="buy-btn chile">🇨🇱 MCI</a>
+      <a href="https://www.aliexpress.com/w/wholesale-HC-SR04-ultrasonic-sensor.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <!-- SECTION: CONTROL -->
+  <div class="section-label">// 03 · CONTROL Y ALIMENTACIÓN</div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">⚡</span>
+        <span class="item-name">Módulo Relay 4 Canales 5V</span>
+        <span class="item-model">SRD-05VDC-SL-C · con optoacoplador</span>
+        <div class="item-desc">Controla bomba 220V desde ESP32. Aislamiento óptico incluido. Alimentar SIEMPRE con fuente externa, no desde el pin 5V del ESP32.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$5.000 CLP</div>
+        <div class="pb-note">~$5.3 USD · Altronics / ML</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$1.80 USD</div>
+        <div class="pb-note">envío gratis <span class="wait-badge">⏱ 20 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://altronics.cl/index.php?route=product/search&amp;search=relay+4+canales" target="_blank" class="buy-btn chile">🇨🇱 Altronics</a>
+      <a href="https://listado.mercadolibre.cl/relay-4-canales-5v-arduino" target="_blank" class="buy-btn ml">ML Chile</a>
+      <a href="https://www.aliexpress.com/w/wholesale-4-channel-relay-module-5v-optocoupler.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">🔌</span>
+        <span class="item-name">Fuente de Poder 5V 2A</span>
+        <span class="item-model">HLK-PM01 · o adaptador USB 5V 2A</span>
+        <div class="item-desc">Para alimentar ESP32 + relay. Opción económica: cargador de celular 5V 2A con conector micro-USB. Opción integrada: módulo HLK-PM01 (entra directo en caja 3D).</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$4.000 CLP</div>
+        <div class="pb-note">~$4.3 USD · ferretería / ripley</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$2.50 USD</div>
+        <div class="pb-note">HLK-PM01 compact <span class="wait-badge">⏱ 25 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://altronics.cl/index.php?route=product/search&amp;search=HLK-PM01" target="_blank" class="buy-btn chile">🇨🇱 Altronics</a>
+      <a href="https://www.aliexpress.com/w/wholesale-HLK-PM01-5V.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <!-- SECTION: CABLES -->
+  <div class="section-label">// 04 · CABLES Y COMPONENTES PASIVOS</div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">🔗</span>
+        <span class="item-name">Kit Cables Jumper Dupont 120pcs</span>
+        <span class="item-model">M-M · M-F · F-F · 20cm</span>
+        <div class="item-desc">Esenciales para prototipo. Incluye macho-macho, macho-hembra y hembra-hembra. Con esto conectas todo sin soldadura en protoboard.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$4.500 CLP</div>
+        <div class="pb-note">~$4.8 USD · MCI / Altronics</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$1.20 USD</div>
+        <div class="pb-note">120 unidades <span class="wait-badge">⏱ 20 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://mcielectronics.cl/shop/?s=cables+jumper" target="_blank" class="buy-btn chile">🇨🇱 MCI</a>
+      <a href="https://www.aliexpress.com/w/wholesale-dupont-jumper-wire-120pcs.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">🧩</span>
+        <span class="item-name">Protoboard 830 puntos</span>
+        <span class="item-model">Breadboard sin soldadura</span>
+        <div class="item-desc">Para prototipar rápido. Cuando el sistema esté validado, migrar a PCB perforada con soldadura para el producto final.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$3.500 CLP</div>
+        <div class="pb-note">~$3.7 USD</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$0.90 USD</div>
+        <div class="pb-note">envío gratis <span class="wait-badge">⏱ 20 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://altronics.cl/index.php?route=product/search&amp;search=protoboard+830" target="_blank" class="buy-btn chile">🇨🇱 Altronics</a>
+      <a href="https://www.aliexpress.com/w/wholesale-830-point-breadboard.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">🔩</span>
+        <span class="item-name">Resistencias 4.7kΩ + 10kΩ (pack)</span>
+        <span class="item-model">1/4W · para pull-up DS18B20 y DHT22</span>
+        <div class="item-desc">Las resistencias pull-up son obligatorias para los sensores DS18B20 y DHT22. Sin ellas los sensores no funcionan. Pack surtido cubre todo el proyecto.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$1.500 CLP</div>
+        <div class="pb-note">~$1.6 USD · ferretería electrónica</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$0.50 USD</div>
+        <div class="pb-note">100 unidades c/valor <span class="wait-badge">⏱ 20 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://altronics.cl/index.php?route=product/search&amp;search=resistencia+4.7k" target="_blank" class="buy-btn chile">🇨🇱 Altronics</a>
+      <a href="https://www.aliexpress.com/w/wholesale-resistor-kit-4.7k-10k.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="tip-box verde">
+    <strong>💡 Estrategia ECO recomendada</strong>
+    Para el <strong>primer prototipo</strong>: compra ESP32 + relay + DHT22 en Chile esta semana (~$20.000 CLP) y empieza a desarrollar. El resto pídelo por AliExpress en paralelo. En 3 semanas llega todo y tienes el sistema completo por mucho menos.
+  </div>
+
+</div>
+
+<!-- ========= PRO VERSION ========= -->
+<div id="v-pro" class="content">
+
+  <!-- TOTALS PRO -->
+  <div class="totals-bar">
+    <div class="total-cell chile-t">
+      <div class="t-label">🇨🇱 Chile total</div>
+      <div class="t-val">$218 USD</div>
+      <div class="t-sub">~$206.000 CLP</div>
+    </div>
+    <div class="total-cell ali-t">
+      <div class="t-label">🇨🇳 AliExpress</div>
+      <div class="t-val">$72 USD</div>
+      <div class="t-sub">envío incluido</div>
+    </div>
+    <div class="total-cell save-t">
+      <div class="t-label">💰 Ahorro</div>
+      <div class="t-val">$146</div>
+      <div class="t-sub">67% más barato</div>
+    </div>
+  </div>
+
+  <div class="section-label">// ECO + EXTRAS PRO</div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">📦</span>
+        <span class="item-name">Todo lo de la versión ECO</span>
+        <div class="item-desc">ESP32 + DHT22 + DS18B20 + Sensor suelo + HC-SR04 + Relay 4CH + Fuente 5V + cables + protoboard.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$87 USD</div>
+        <div class="pb-note">Ver pestaña ECO</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">~$28 USD</div>
+        <div class="pb-note">Ver pestaña ECO</div>
+      </div>
+    </div>
+    <div class="links-row">
+      <button class="buy-btn info" onclick="showVersion(&#39;eco&#39;, document.querySelector(&#39;.tab.eco&#39;))">Ver lista ECO →</button>
+    </div>
+  </div>
+
+  <div class="section-label">// 05 · SENSORES pH y EC (PRO exclusivo)</div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">⚗️</span>
+        <span class="item-name">Sensor pH Analógico <span class="pro-badge">PRO</span></span>
+        <span class="item-model">DFRobot SEN0161-V2 · Gravity pH</span>
+        <div class="item-desc">Sonda de pH de grado industrial. Precisión ±0.1 pH. Compatible 3.3V–5V. Incluye soluciones buffer pH4 y pH7 para calibración. La sonda dura ~1–2 años.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$35.000 CLP</div>
+        <div class="pb-note">~$37 USD · MCI Electronics</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$12–18 USD</div>
+        <div class="pb-note">kit con sonda + buffer <span class="wait-badge">⏱ 25 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://www.mcielectronics.cl/shop/product/medidor-analogico-pro-para-ph-gravity-11037" target="_blank" class="buy-btn chile">🇨🇱 MCI</a>
+      <a href="https://uelectronics.com/producto/kit-sensor-de-ph-analogico-con-soluciones-de-calibracion-sen0161-v2/" target="_blank" class="buy-btn chile">🇨🇱 uElectronics</a>
+      <a href="https://www.aliexpress.com/w/wholesale-ph-sensor-module-dfrobot-gravity.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">🔬</span>
+        <span class="item-name">Sensor EC / TDS <span class="pro-badge">PRO</span></span>
+        <span class="item-model">DFRobot SEN0244 · Conductividad</span>
+        <div class="item-desc">Mide concentración de nutrientes (mS/cm). Detecta solución diluida o concentrada. Requiere calibración con solución KCl estándar cada 4–6 semanas.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$28.000 CLP</div>
+        <div class="pb-note">~$30 USD · MCI / ML</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$8–12 USD</div>
+        <div class="pb-note">TDS/EC sensor module <span class="wait-badge">⏱ 25 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://listado.mercadolibre.cl/sensor-ec-tds-arduino" target="_blank" class="buy-btn ml">ML Chile</a>
+      <a href="https://www.aliexpress.com/w/wholesale-TDS-EC-meter-sensor-module-arduino.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="section-label">// 06 · PANTALLA Y DISPLAY (PRO)</div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">📺</span>
+        <span class="item-name">Pantalla TFT 2.8" Touch <span class="pro-badge">PRO</span></span>
+        <span class="item-model">ILI9341 · 240×320 · SPI + Touch resistivo</span>
+        <div class="item-desc">Display a color con touch. Muestra pH, EC, temp y estado bomba en tiempo real sin necesitar el celular. Librería TFT_eSPI para ESP32.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$18.000 CLP</div>
+        <div class="pb-note">~$19 USD · Altronics / ML</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$5–8 USD</div>
+        <div class="pb-note">ILI9341 2.8" SPI <span class="wait-badge">⏱ 25 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://altronics.cl/index.php?route=product/search&amp;search=TFT+2.8" target="_blank" class="buy-btn chile">🇨🇱 Altronics</a>
+      <a href="https://listado.mercadolibre.cl/pantalla-tft-2.8-ili9341" target="_blank" class="buy-btn ml">ML Chile</a>
+      <a href="https://www.aliexpress.com/w/wholesale-2.8-inch-TFT-LCD-ILI9341-touch-screen.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="section-label">// 07 · DOSIFICACIÓN NUTRIENTES (PRO)</div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">💊</span>
+        <span class="item-name">Bombas Peristálticas ×2 <span class="pro-badge">PRO</span></span>
+        <span class="item-model">12V DC · 50mL/min · con tubing</span>
+        <div class="item-desc">Dosifican nutrientes A y B automáticamente. La app calcula la dosis según EC medida y tipo de planta. 5 segundos de bomba ≈ 4mL. Requiere fuente 12V adicional.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$22.000 CLP c/u</div>
+        <div class="pb-note">~$23 USD × 2 = $46 USD</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$5–8 USD c/u</div>
+        <div class="pb-note">12V peristaltic pump <span class="wait-badge">⏱ 25 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://listado.mercadolibre.cl/bomba-peristaltica-12v" target="_blank" class="buy-btn ml">ML Chile</a>
+      <a href="https://www.aliexpress.com/w/wholesale-12v-peristaltic-pump-dosing.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">📡</span>
+        <span class="item-name">BME280 <span class="pro-badge">PRO</span></span>
+        <span class="item-model">Temp + Humedad + Presión · I2C</span>
+        <div class="item-desc">Reemplaza DHT22 en versión PRO. Más preciso, protocolo I2C (2 cables en vez de 3), y añade presión barométrica. Módulo GY-BME280.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$7.500 CLP</div>
+        <div class="pb-note">~$8 USD · MCI / Altronics</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$1.80 USD</div>
+        <div class="pb-note">GY-BME280 module <span class="wait-badge">⏱ 20 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://altronics.cl/index.php?route=product/search&amp;search=BME280" target="_blank" class="buy-btn chile">🇨🇱 Altronics</a>
+      <a href="https://mcielectronics.cl/shop/?s=BME280" target="_blank" class="buy-btn chile">🇨🇱 MCI</a>
+      <a href="https://www.aliexpress.com/w/wholesale-GY-BME280-module.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="item-card">
+    <div class="item-top">
+      <div class="item-info">
+        <span class="item-emoji">🔋</span>
+        <span class="item-name">Relay 8 Canales 5V <span class="pro-badge">PRO</span></span>
+        <span class="item-model">8CH Optocoupler Relay Board</span>
+        <div class="item-desc">Versión PRO necesita más canales: bomba agua + nutriente A + nutriente B + ventilador + luz UV + reservas. Un módulo de 8CH resuelve todo en una sola placa.</div>
+      </div>
+    </div>
+    <div class="price-row">
+      <div class="price-box chile">
+        <span class="pb-label">🇨🇱 Chile</span>
+        <div class="pb-price">~$9.500 CLP</div>
+        <div class="pb-note">~$10 USD · ML Chile</div>
+      </div>
+      <div class="price-box ali">
+        <span class="pb-label">🇨🇳 AliExpress</span>
+        <div class="pb-price">$3.50 USD</div>
+        <div class="pb-note">8CH 5V relay board <span class="wait-badge">⏱ 20 días</span></div>
+      </div>
+    </div>
+    <div class="links-row">
+      <a href="https://listado.mercadolibre.cl/relay-8-canales-5v-arduino" target="_blank" class="buy-btn ml">ML Chile</a>
+      <a href="https://www.aliexpress.com/w/wholesale-8-channel-relay-module-5v.html" target="_blank" class="buy-btn ali">🇨🇳 AliExpress</a>
+    </div>
+  </div>
+
+  <div class="tip-box morado">
+    <strong>💡 Estrategia PRO recomendada</strong>
+    Primero construye y valida la versión ECO. Cuando tengas el primer cliente interesado en el upgrade PRO, pide el sensor pH + EC + pantalla por AliExpress (~$30 USD). Ahorra $116 USD vs comprarlo todo en Chile. El tiempo de espera (25 días) da tiempo para preparar la app.
+  </div>
+
+</div>
+
+<!-- SECTION: TIENDAS CHILE -->
+<div class="section-label" style="margin-top:6px">// TIENDAS RECOMENDADAS EN CHILE</div>
+<div style="padding: 14px 14px 4px">
+
+  <div class="store-card">
+    <span class="store-icon">⚡</span>
+    <div>
+      <div class="store-name">MCI Electronics</div>
+      <div class="store-detail">La tienda más completa de electrónica en Chile. Despacho mismo día en Santiago. Excelente para ESP32, sensores y módulos de precisión. Tiene tienda física en Santiago y envío a regiones.</div>
+      <a href="https://mcielectronics.cl/" target="_blank" class="store-link">→ mcielectronics.cl</a>
+    </div>
+  </div>
+
+  <div class="store-card">
+    <span class="store-icon">🔧</span>
+    <div>
+      <div class="store-name">Altronics</div>
+      <div class="store-detail">Amplio catálogo de componentes electrónicos. Buenos precios en sensores básicos (DHT22, relays, HC-SR04). Envío a todo Chile. Sin tienda física propia, todo online.</div>
+      <a href="https://altronics.cl/" target="_blank" class="store-link">→ altronics.cl</a>
+    </div>
+  </div>
+
+  <div class="store-card">
+    <span class="store-icon">🌿</span>
+    <div>
+      <div class="store-name">Makers Chile (Viña del Mar)</div>
+      <div class="store-detail">Especializada en proyectos maker / IoT. Buena para ESP32 y kits de sensores. Tienda física en Viña del Mar, envío a todo Chile. Comunidad activa con tutoriales.</div>
+      <a href="https://makerschile.cl/" target="_blank" class="store-link">→ makerschile.cl</a>
+    </div>
+  </div>
+
+  <div class="store-card">
+    <span class="store-icon">🏭</span>
+    <div>
+      <div class="store-name">ElectroArt</div>
+      <div class="store-detail">Precios muy competitivos en ESP32 y microcontroladores. Catálogo más reducido pero con lo esencial. Ideal para comprar el ESP32 cuando necesitas hoy.</div>
+      <a href="https://www.electroart.cl/" target="_blank" class="store-link">→ electroart.cl</a>
+    </div>
+  </div>
+
+  <div class="store-card">
+    <span class="store-icon">🔬</span>
+    <div>
+      <div class="store-name">Mechatronic Store (Curicó)</div>
+      <div class="store-detail">Especialista en IoT y kits completos. Tiene kits starter con ESP32 ya listos. Envío gratis sobre $19.990 CLP. Bueno para kit inicial de sensores.</div>
+      <a href="https://www.mechatronicstore.cl/" target="_blank" class="store-link">→ mechatronicstore.cl</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ESTRATEGIA FINAL -->
+<div class="section-label">// ESTRATEGIA ÓPTIMA DE COMPRA</div>
+<div class="strategy-grid">
+  <div class="strategy-card ali-s">
+    <h4>🇨🇳 Pedir HOY por Ali</h4>
+    <ul>
+      <li>DHT22 × 2 unidades</li>
+      <li>DS18B20 × 2 unidades</li>
+      <li>Sensor suelo × 5 pack</li>
+      <li>HC-SR04 × 5 pack</li>
+      <li>Resistencias surtido</li>
+      <li>Cables jumper 120pcs</li>
+      <li>Relay 4CH × 2 unidades</li>
+      <li>HLK-PM01 × 2 unidades</li>
+    </ul>
+  </div>
+  <div class="strategy-card chile-s">
+    <h4>🇨🇱 Comprar en Chile esta semana</h4>
+    <ul>
+      <li>ESP32 × 2 unidades</li>
+      <li>Protoboard × 1</li>
+      <li>USB cable micro × 1</li>
+      <li>pH sensor (si urgent)</li>
+      <li>Filamento PETG 3D</li>
+    </ul>
+  </div>
+</div>
+
+<div class="tip-box naranja" style="margin-top: 4px">
+  <strong>⏱ Timeline de compra inteligente</strong>
+  <strong>Hoy:</strong> Compra el ESP32 en Chile (~$8.500 CLP) y empieza a programar.<br>
+  <strong>Hoy mismo:</strong> Haz el pedido completo en AliExpress (~$28–72 USD según versión).<br>
+  <strong>En 20–25 días:</strong> Llega todo de Ali. Para entonces ya tienes el código listo.<br>
+  <strong>Semana 5:</strong> Sistema electrónico completo funcionando a fracción del costo.
+</div>
+
+<script>
+function showVersion(v, el) {
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('v-' + v).classList.add('active');
+  if (el) el.classList.add('active');
+}
+</script>
+
+
+</body></html>
