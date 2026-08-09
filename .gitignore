@@ -27,13 +27,15 @@ nul
 *.iws
 
 # External/local agent tooling
-huerta_viva_app/ui-ux-pro-max-skill/
-huerta_viva_app/.agents/
-huerta_viva_app/.claude/
+**/ui-ux-pro-max-skill/
+**/.agents/
+**/.claude/
 
 # Firebase/project secrets
 **/google-services.json
 **/GoogleService-Info.plist
+**/.env
+**/.env.*
 *.env
 *.env.*
 
