@@ -1,38 +1,29 @@
 /**
  * HidroSmart — ESP8266 NodeMCU (Gateway WiFi/Firebase)
- * v4.0 — Rol simplificado: YA NO tiene sensores ni pantalla propios.
- * El Arduino Mega 2560 concentra ahora el TFT, el DHT22, el potenciómetro
- * y los relés; este ESP8266 es exclusivamente el puente entre el Mega
- * (por UART) e internet (WiFi + Firebase Realtime Database).
+ * v4.1 — Command protocol v2 foundation.
  *
  * Responsabilidades:
  *  1. Recibe telemetría CSV del Mega por UART y la publica en Firebase.
- *  2. Sondea Firebase en busca de comandos de la app y los reenvía al
- *     Mega por UART (cierra el canal app → hardware).
+ *  2. Lee sobres de comando RTDB con commandId + timestamp + TTL.
+ *  3. Reenvía cada comando al Mega incluyendo commandId.
+ *  4. Reintenta de forma acotada mientras no exista ACK.
+ *  5. Publica el ACK real recibido desde el Mega.
  *
- * Protocolo UART (9600 baud):
- *  Mega → ESP8266 (cada 2 s):
+ * UART 9600 baud:
+ *  Mega → ESP8266 telemetría:
  *    "temp,hum,ph,bomba,nutrientes,luz,aux\n"
- *  ESP8266 → Mega (al detectar un comando nuevo en Firebase):
- *    "BOMBA_ON\n" | "NUTRIENTES_ON\n" | "LUZ_ON\n" | "LUZ_OFF\n" | "AUX_ON\n" | "AUX_OFF\n"
+ *  ESP8266 → Mega comando v2:
+ *    "CMD|<commandId>|<type>|<0|1>\n"
+ *  Mega → ESP8266 ACK:
+ *    "ACK|<commandId>|<status>|<code>\n"
  *
- * Esquema Firebase RTDB:
- *  /dispositivos/{DEVICE_ID}/telemetria   ← este firmware escribe (setJSON)
- *  /dispositivos/{DEVICE_ID}/info         ← este firmware escribe (una vez, al arrancar)
- *  /dispositivos/{DEVICE_ID}/comandos     ← la app escribe, este firmware LEE
- *    - luz        (bool, estado sostenido)
- *    - auxiliar   (bool, estado sostenido)
- *    - bomba      (bool, momentáneo: true dispara pulso, luego se resetea a false)
- *    - nutrientes (bool, momentáneo: ídem)
+ * RTDB:
+ *  /dispositivos/{DEVICE_ID}/comandos/{actuator}
+ *    commandId, value, issuedAt, ttlMs, requestedBy
+ *  /dispositivos/{DEVICE_ID}/commandAcks/{actuator}
+ *    commandId, status, code, at
  *
- * Cableado UART con el Mega (divisor de tensión 5V→3.3V en la línea Mega TX):
- *   Mega TX1 (pin 18) ──[R1 10k]──┬──[R2 22k]── GND   → punto medio a ESP8266 RX
- *   Mega RX1 (pin 19) ───────────────────────────────  ESP8266 TX (directo, sin divisor)
- *   GND común obligatoria entre ambas placas.
- *
- * Librerías (Library Manager):
- *  · Firebase ESP8266 Client (Mobizt)
- *  · NTPClient (Fabrice Weinberg)
+ * La autenticación IoT sigue siendo legacy en esta fase y se migrará aparte.
  */
 
 #include <ESP8266WiFi.h>
@@ -46,34 +37,48 @@
 #define FIREBASE_HOST  "TU_FIREBASE_RTDB_HOST"
 #define FIREBASE_AUTH  "TU_FIREBASE_LEGACY_TOKEN"
 
-// ── IDENTIDAD DEL DISPOSITIVO ────────────────────────────────────
+// ── IDENTIDAD LEGACY/DEV DEL DISPOSITIVO ─────────────────────────
 #define DEVICE_ID       "HS-001"
 #define RUTA_TELEMETRIA "/dispositivos/" DEVICE_ID "/telemetria"
 #define RUTA_INFO       "/dispositivos/" DEVICE_ID "/info"
 #define RUTA_COMANDOS   "/dispositivos/" DEVICE_ID "/comandos"
+#define RUTA_ACKS       "/dispositivos/" DEVICE_ID "/commandAcks"
 
 // ── OBJETOS ──────────────────────────────────────────────────────
 WiFiUDP        ntpUDP;
-NTPClient      timeClient(ntpUDP, "pool.ntp.org", -18000); // UTC-5
+NTPClient      timeClient(ntpUDP, "pool.ntp.org", 0); // UTC real
 
 FirebaseData   fbData;
-FirebaseData   fbCmd;     // handle separado para no chocar con el de telemetría
+FirebaseData   fbCmd;
 FirebaseConfig fbConfig;
 FirebaseAuth   fbAuth;
 
-// ── ESTADO RECIBIDO DEL MEGA (última telemetría) ─────────────────
+// ── ESTADO RECIBIDO DEL MEGA ─────────────────────────────────────
 float gTemp = 0, gHum = 0, gPh = 7.0;
 bool  gBomba = false, gNutrientes = false, gLuz = false, gAux = false;
 
-// ── ESTADO DE COMANDOS (para no repetir toggles ya aplicados) ────
-bool lastLuz = false, lastAux = false;
-bool comandosInicializados = false;
-
 String uartBuf = "";
 
+// ── COMMAND PROTOCOL V2 ──────────────────────────────────────────
+static const uint8_t ACTUATOR_COUNT = 4;
+const char* ACTUATORS[ACTUATOR_COUNT] = {
+  "luz", "auxiliar", "bomba", "nutrientes"
+};
+
+String lastSeenId[ACTUATOR_COUNT];
+String pendingId[ACTUATOR_COUNT];
+String pendingFrame[ACTUATOR_COUNT];
+uint64_t pendingExpiresAt[ACTUATOR_COUNT] = {0, 0, 0, 0};
+unsigned long pendingLastSend[ACTUATOR_COUNT] = {0, 0, 0, 0};
+uint8_t pendingAttempts[ACTUATOR_COUNT] = {0, 0, 0, 0};
+
+const uint8_t MAX_UART_ATTEMPTS = 3;
+const unsigned long UART_RETRY_MS = 1500UL;
+const unsigned long MIN_VALID_EPOCH = 1700000000UL;
+
 // ── TIMING ────────────────────────────────────────────────────────
-const unsigned long T_CLOUD     = 10000UL;  // publicar telemetría
-const unsigned long T_CMD_POLL  = 3000UL;   // sondear comandos
+const unsigned long T_CLOUD     = 10000UL;
+const unsigned long T_CMD_POLL  = 1000UL;
 unsigned long tCloud = 0;
 unsigned long tCmdPoll = 0;
 
@@ -81,16 +86,23 @@ unsigned long tCmdPoll = 0;
 void conectarWiFi();
 void leerSerialMega();
 void parsearCSV(const String& linea);
+void parsearAckMega(const String& linea);
 void publicarTelemetria();
 void sondearComandos();
-void enviarAMega(const char* comando);
+void procesarSlot(uint8_t index);
+void enviarPendiente(uint8_t index);
+void reintentarPendientes();
+void limpiarPendiente(uint8_t index);
+void publicarAck(const char* actuator, const String& commandId,
+                 const char* status, const char* code);
+void enviarAMega(const String& comando);
+String uartTypeFor(const char* actuator);
 String epochToISO8601(unsigned long epoch);
+uint64_t nowEpochMs();
 
 // =================================================================
 void setup() {
   Serial.begin(9600);
-  // Reubica el UART de hardware a GPIO15(TX)/GPIO13(RX), liberando
-  // GPIO1/GPIO3 (USB) para depuración por el monitor serie.
   Serial.swap();
 
   conectarWiFi();
@@ -105,26 +117,22 @@ void setup() {
 
   if (WiFi.status() == WL_CONNECTED) {
     FirebaseJson info;
-    info.set("modelo",   "HidroSmart Eco (Mega+ESP8266)");
-    info.set("fw",       "4.0");
-    info.set("ip",       WiFi.localIP().toString());
+    info.set("modelo", "HidroSmart Eco (Mega+ESP8266)");
+    info.set("fw", "4.1");
+    info.set("commandProtocol", "v2");
+    info.set("ip", WiFi.localIP().toString());
     info.set("arranque", epochToISO8601(timeClient.getEpochTime()));
     Firebase.setJSON(fbData, RUTA_INFO, info);
-
-    // Inicializa el nodo de comandos si no existe, para que la app
-    // tenga un estado consistente desde el primer momento.
-    FirebaseJson cmdInit;
-    cmdInit.set("luz", false);
-    cmdInit.set("auxiliar", false);
-    cmdInit.set("bomba", false);
-    cmdInit.set("nutrientes", false);
-    Firebase.setJSON(fbData, RUTA_COMANDOS, cmdInit);
   }
+
+  // No inicializar /comandos desde firmware. Un arranque del gateway no debe
+  // sobrescribir una solicitud válida escrita por la app.
 }
 
 // =================================================================
 void loop() {
   leerSerialMega();
+  reintentarPendientes();
 
   unsigned long t = millis();
 
@@ -149,17 +157,18 @@ void conectarWiFi() {
 }
 
 // =================================================================
-// Acumula bytes del Mega hasta '\n' y parsea el CSV de telemetría.
 void leerSerialMega() {
   while (Serial.available()) {
     char c = (char)Serial.read();
     if (c == '\n') {
       uartBuf.trim();
-      if (uartBuf.length() > 0 && uartBuf.indexOf(',') >= 0) {
+      if (uartBuf.startsWith("ACK|")) {
+        parsearAckMega(uartBuf);
+      } else if (uartBuf.length() > 0 && uartBuf.indexOf(',') >= 0) {
         parsearCSV(uartBuf);
       }
       uartBuf = "";
-    } else if (uartBuf.length() < 64) {
+    } else if (uartBuf.length() < 128) {
       uartBuf += c;
     }
   }
@@ -168,11 +177,11 @@ void leerSerialMega() {
 // Formato: "temp,hum,ph,bomba,nutrientes,luz,aux"
 void parsearCSV(const String& linea) {
   int idx[6];
-  int pos = 0, campo = 0;
+  int campo = 0;
   for (int i = 0; i < linea.length() && campo < 6; i++) {
-    if (linea[i] == ',') { idx[campo++] = i; }
+    if (linea[i] == ',') idx[campo++] = i;
   }
-  if (campo < 6) return; // trama incompleta, descartar
+  if (campo < 6) return;
 
   gTemp       = linea.substring(0, idx[0]).toFloat();
   gHum        = linea.substring(idx[0] + 1, idx[1]).toFloat();
@@ -183,24 +192,47 @@ void parsearCSV(const String& linea) {
   gAux        = linea.substring(idx[5] + 1).toInt() == 1;
 }
 
+// Formato: ACK|commandId|STATUS|CODE
+void parsearAckMega(const String& linea) {
+  int p1 = linea.indexOf('|');
+  int p2 = linea.indexOf('|', p1 + 1);
+  int p3 = linea.indexOf('|', p2 + 1);
+  if (p1 < 0 || p2 < 0 || p3 < 0) return;
+
+  String commandId = linea.substring(p1 + 1, p2);
+  String status = linea.substring(p2 + 1, p3);
+  String code = linea.substring(p3 + 1);
+  commandId.trim(); status.trim(); code.trim();
+  if (commandId.length() == 0) return;
+
+  for (uint8_t i = 0; i < ACTUATOR_COUNT; i++) {
+    if (pendingId[i] == commandId) {
+      publicarAck(ACTUATORS[i], commandId, status.c_str(), code.c_str());
+      limpiarPendiente(i);
+      return;
+    }
+  }
+}
+
 // =================================================================
 void publicarTelemetria() {
   if (WiFi.status() != WL_CONNECTED) return;
 
-  FirebaseJson json;
-  json.set("ph",              gPh);
-  json.set("temp_aire",       gTemp);
-  json.set("humedad",         gHum);
-  json.set("ec",              0.0);   // placeholder: sin sensor EC aún
-  json.set("temp_agua",       0.0);   // placeholder: sin DS18B20 aún
-  json.set("nivel_agua",      0.0);   // placeholder: sin HC-SR04 aún
-  json.set("relay_bomba",      gBomba);
-  json.set("relay_nutrientes", gNutrientes);
-  json.set("relay_luz",        gLuz);
-  json.set("relay_auxiliar",   gAux);
-  json.set("timestamp",       epochToISO8601(timeClient.getEpochTime()));
+  timeClient.update();
 
-  // setJSON (PUT) reemplaza el nodo completo, sin dejar claves huérfanas.
+  FirebaseJson json;
+  json.set("ph", gPh);
+  json.set("temp_aire", gTemp);
+  json.set("humedad", gHum);
+  json.set("ec", 0.0);
+  json.set("temp_agua", 0.0);
+  json.set("nivel_agua", 0.0);
+  json.set("relay_bomba", gBomba);
+  json.set("relay_nutrientes", gNutrientes);
+  json.set("relay_luz", gLuz);
+  json.set("relay_auxiliar", gAux);
+  json.set("timestamp", epochToISO8601(timeClient.getEpochTime()));
+
   if (!Firebase.setJSON(fbData, RUTA_TELEMETRIA, json)) {
     Serial.print(F("[Firebase] Error telemetria: "));
     Serial.println(fbData.errorReason());
@@ -208,46 +240,161 @@ void publicarTelemetria() {
 }
 
 // =================================================================
-// Lee el nodo de comandos y reenvía al Mega solo lo que cambió
-// (toggles) o lo que llegó activado (momentáneos), consumiéndolo
-// después para permitir un nuevo disparo posterior.
 void sondearComandos() {
   if (WiFi.status() != WL_CONNECTED) return;
+  timeClient.update();
 
-  bool luz = lastLuz, aux = lastAux;
-
-  if (Firebase.getBool(fbCmd, String(RUTA_COMANDOS) + "/luz"))      luz = fbCmd.boolData();
-  if (Firebase.getBool(fbCmd, String(RUTA_COMANDOS) + "/auxiliar")) aux = fbCmd.boolData();
-
-  if (!comandosInicializados) {
-    // Primera lectura: adopta el estado tal cual está en Firebase,
-    // sin disparar un cambio hacia el Mega (evita un toggle fantasma
-    // al arrancar).
-    lastLuz = luz; lastAux = aux;
-    comandosInicializados = true;
-  } else {
-    if (luz != lastLuz) { enviarAMega(luz ? "LUZ_ON" : "LUZ_OFF"); lastLuz = luz; }
-    if (aux != lastAux) { enviarAMega(aux ? "AUX_ON" : "AUX_OFF"); lastAux = aux; }
-  }
-
-  // Comandos momentáneos: si están en true, disparan el pulso en el
-  // Mega y se resetean a false en Firebase para permitir un reintento.
-  if (Firebase.getBool(fbCmd, String(RUTA_COMANDOS) + "/bomba") && fbCmd.boolData()) {
-    enviarAMega("BOMBA_ON");
-    Firebase.setBool(fbData, String(RUTA_COMANDOS) + "/bomba", false);
-  }
-  if (Firebase.getBool(fbCmd, String(RUTA_COMANDOS) + "/nutrientes") && fbCmd.boolData()) {
-    enviarAMega("NUTRIENTES_ON");
-    Firebase.setBool(fbData, String(RUTA_COMANDOS) + "/nutrientes", false);
+  for (uint8_t i = 0; i < ACTUATOR_COUNT; i++) {
+    procesarSlot(i);
   }
 }
 
-void enviarAMega(const char* comando) {
-  Serial.println(comando);  // UART (recuerda: Serial.swap() ya movió esto a GPIO15/13)
+void procesarSlot(uint8_t index) {
+  String base = String(RUTA_COMANDOS) + "/" + ACTUATORS[index];
+
+  if (!Firebase.getString(fbCmd, base + "/commandId")) return;
+  String commandId = fbCmd.stringData();
+  commandId.trim();
+  if (commandId.length() == 0 || commandId == lastSeenId[index]) return;
+
+  // Si aparece una orden más nueva para el mismo actuador, la anterior deja de
+  // ser reenviable. Preferimos perder una orden antigua antes que ejecutar dos.
+  if (pendingId[index].length() > 0 && pendingId[index] != commandId) {
+    publicarAck(ACTUATORS[index], pendingId[index], "REJECTED", "SUPERSEDED");
+    limpiarPendiente(index);
+  }
+
+  bool value;
+  if (!Firebase.getBool(fbCmd, base + "/value")) return;
+  value = fbCmd.boolData();
+
+  if (!Firebase.getDouble(fbCmd, base + "/issuedAt")) return;
+  uint64_t issuedAt = (uint64_t)fbCmd.doubleData();
+
+  if (!Firebase.getInt(fbCmd, base + "/ttlMs")) return;
+  int ttlMs = fbCmd.intData();
+
+  if (!Firebase.getString(fbCmd, base + "/requestedBy")) return;
+  String requestedBy = fbCmd.stringData();
+  requestedBy.trim();
+
+  lastSeenId[index] = commandId;
+
+  if (requestedBy.length() == 0 || ttlMs < 1000 || ttlMs > 15000 || issuedAt == 0) {
+    publicarAck(ACTUATORS[index], commandId, "REJECTED", "INVALID_ENVELOPE");
+    return;
+  }
+
+  unsigned long epoch = timeClient.getEpochTime();
+  if (epoch < MIN_VALID_EPOCH) {
+    publicarAck(ACTUATORS[index], commandId, "REJECTED", "TIME_UNSYNCED");
+    return;
+  }
+
+  uint64_t nowMs = (uint64_t)epoch * 1000ULL;
+  uint64_t expiresAt = issuedAt + (uint64_t)ttlMs;
+  if (nowMs > expiresAt) {
+    publicarAck(ACTUATORS[index], commandId, "EXPIRED", "TTL_EXPIRED");
+    return;
+  }
+
+  if ((strcmp(ACTUATORS[index], "bomba") == 0 ||
+       strcmp(ACTUATORS[index], "nutrientes") == 0) && !value) {
+    publicarAck(ACTUATORS[index], commandId, "REJECTED", "INVALID_VALUE");
+    return;
+  }
+
+  String type = uartTypeFor(ACTUATORS[index]);
+  if (type.length() == 0) {
+    publicarAck(ACTUATORS[index], commandId, "REJECTED", "UNKNOWN_ACTUATOR");
+    return;
+  }
+
+  pendingId[index] = commandId;
+  pendingFrame[index] = "CMD|" + commandId + "|" + type + "|" + (value ? "1" : "0");
+  pendingExpiresAt[index] = expiresAt;
+  pendingAttempts[index] = 0;
+  pendingLastSend[index] = 0;
+  enviarPendiente(index);
+}
+
+void enviarPendiente(uint8_t index) {
+  if (pendingId[index].length() == 0) return;
+  if (pendingAttempts[index] >= MAX_UART_ATTEMPTS) return;
+
+  enviarAMega(pendingFrame[index]);
+  pendingAttempts[index]++;
+  pendingLastSend[index] = millis();
+}
+
+void reintentarPendientes() {
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  uint64_t nowMs = nowEpochMs();
+  unsigned long t = millis();
+
+  for (uint8_t i = 0; i < ACTUATOR_COUNT; i++) {
+    if (pendingId[i].length() == 0) continue;
+
+    if (nowMs > 0 && nowMs > pendingExpiresAt[i]) {
+      publicarAck(ACTUATORS[i], pendingId[i], "EXPIRED", "TTL_EXPIRED_WAITING_ACK");
+      limpiarPendiente(i);
+      continue;
+    }
+
+    if (pendingAttempts[i] >= MAX_UART_ATTEMPTS) {
+      if (t - pendingLastSend[i] >= UART_RETRY_MS) {
+        publicarAck(ACTUATORS[i], pendingId[i], "REJECTED", "MEGA_NO_ACK");
+        limpiarPendiente(i);
+      }
+      continue;
+    }
+
+    if (t - pendingLastSend[i] >= UART_RETRY_MS) {
+      enviarPendiente(i);
+    }
+  }
+}
+
+void limpiarPendiente(uint8_t index) {
+  pendingId[index] = "";
+  pendingFrame[index] = "";
+  pendingExpiresAt[index] = 0;
+  pendingAttempts[index] = 0;
+  pendingLastSend[index] = 0;
+}
+
+void publicarAck(const char* actuator, const String& commandId,
+                 const char* status, const char* code) {
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  FirebaseJson ack;
+  ack.set("commandId", commandId);
+  ack.set("status", status);
+  ack.set("code", code);
+  ack.set("at", (double)nowEpochMs());
+  Firebase.setJSON(fbData, String(RUTA_ACKS) + "/" + actuator, ack);
+}
+
+String uartTypeFor(const char* actuator) {
+  if (strcmp(actuator, "luz") == 0) return "LIGHT_SET";
+  if (strcmp(actuator, "auxiliar") == 0) return "AUX_SET";
+  if (strcmp(actuator, "bomba") == 0) return "PUMP_PULSE";
+  if (strcmp(actuator, "nutrientes") == 0) return "NUTRIENTS_PULSE";
+  return "";
+}
+
+void enviarAMega(const String& comando) {
+  Serial.println(comando);
+}
+
+uint64_t nowEpochMs() {
+  unsigned long epoch = timeClient.getEpochTime();
+  if (epoch < MIN_VALID_EPOCH) return 0;
+  return (uint64_t)epoch * 1000ULL;
 }
 
 // =================================================================
-// Convierte epoch Unix a "YYYY-MM-DDTHH:MM:SSZ"
 String epochToISO8601(unsigned long epoch) {
   static const uint8_t dim[] = {31,28,31,30,31,30,31,31,30,31,30,31};
 
