@@ -15,7 +15,7 @@ flowchart TD
     ACKS["RTDB commandAcks"]
     TELEMETRY["RTDB telemetria"]
     STORAGE["Firebase Storage"]
-    GW["ESP8266 gateway v4.1"]
+    GW["ESP8266 gateway v4.2"]
     MEGA["Arduino Mega 2560"]
     IO["DHT22, entrada pH simulada, TFT y 4 relés"]
     CAM["ESP32-CAM"]
@@ -30,10 +30,10 @@ flowchart TD
     DEVICES -.->|"proyección confiable futura"| ACCESS
     ACCESS -->|"Security Rules"| COMMANDS
     APP -->|"commandId + issuedAt + TTL"| COMMANDS
-    COMMANDS --> GW
+    COMMANDS -->|"1 en vuelo por actuador"| GW
     GW -->|"CMD commandId type value"| MEGA
     MEGA -->|"ACK commandId status code"| GW
-    GW --> ACKS
+    GW -->|"persistencia terminal obligatoria"| ACKS
     ACKS --> APP
     MEGA -->|"CSV telemetría"| GW
     GW --> TELEMETRY
@@ -72,13 +72,7 @@ Para hardware real, `RTDBService` ya no escribe booleanos momentáneos. Crea un 
 - `status`;
 - timestamps de creación, claim y actualización.
 
-`DeviceService` centraliza:
-
-- lista de dispositivos propios;
-- lectura de un dispositivo propio;
-- comprobación de ownership;
-- resolución del dispositivo autorizado para RTDB;
-- actualización de alias permitida.
+`DeviceService` centraliza lista, lectura, comprobación de ownership, resolución del dispositivo autorizado y actualización de alias.
 
 La creación/claim de un dispositivo está intencionalmente fuera del cliente en esta fase.
 
@@ -96,11 +90,13 @@ commandAcks/{actuator}/{commandId}
 
 Los comandos son inmutables y tienen TTL. El puntero solo puede referenciar un comando existente del usuario autorizado.
 
+El gateway serializa cada actuador: mientras una orden esté pendiente no procesa otra del mismo actuador. El cambio de pointer no implica que la orden anterior haya sido rechazada.
+
 ## Nodo de control local
 
 El Arduino Mega 2560 continúa concentrando sensores, TFT y cuatro relés. La telemetría hacia el ESP8266 conserva el CSV anterior cada dos segundos para evitar mezclar esta fase con una migración general del transporte.
 
-La recepción de comandos sí usa UART v2:
+La recepción de comandos usa UART v2:
 
 ```text
 CMD|<commandId>|<type>|<0|1>
@@ -127,19 +123,25 @@ La lógica ADC/pH se conserva sin corregir porque pertenece a otra fase.
 
 El ESP8266 sigue siendo el puente entre WiFi/Firebase y el Mega.
 
-En v4.1:
+En v4.2:
 
 - recibe telemetría CSV del Mega;
 - publica telemetría cada diez segundos;
 - consulta `commandPointers` aproximadamente cada segundo;
 - carga el comando inmutable referenciado;
-- valida ID, sobre y TTL;
+- valida formato de ID, sobre y TTL;
 - usa UTC/NTP para verificar vigencia;
+- mantiene como máximo una orden en vuelo por actuador;
 - reenvía el mismo `commandId` como máximo tres veces por UART;
-- publica el ACK recibido desde el Mega;
+- al recibir ACK del Mega detiene los reintentos UART;
+- conserva el slot del actuador bloqueado hasta que el ACK terminal quede persistido en RTDB;
+- si falla `Firebase.setJSON()`, reintenta la persistencia sin iniciar la siguiente orden;
+- si no existe ACK tras haber enviado una orden, usa estado `UNKNOWN` en vez de afirmar falsamente `REJECTED`;
 - no inicializa ni resetea comandos al arrancar.
 
-Si NTP todavía no está sincronizado, el gateway no consume definitivamente la orden: vuelve a evaluarla en un poll posterior.
+Si NTP todavía no está sincronizado antes del primer envío, el gateway no ejecuta la orden ni la consume definitivamente: vuelve a evaluarla en un poll posterior.
+
+El estado pendiente del gateway sigue siendo RAM. Si el ESP8266 reinicia, reconstruye a partir del pointer y el registro RTDB. Para pulsos, la EEPROM del Mega protege contra repetir físicamente el mismo `commandId`.
 
 El firmware continúa usando `DEVICE_ID "HS-001"` y autenticación Firebase legacy. La identidad/autenticación IoT real queda como siguiente barrera de seguridad.
 
@@ -166,8 +168,8 @@ Los campos `deviceId` del perfil y `esp32Id`/`esp32Connected` se conservan tempo
 - `dispositivos/{deviceId}/telemetria`: gateway escribe; app lee si está autorizada.
 - `dispositivos/{deviceId}/info`: gateway publica metadatos de arranque.
 - `dispositivos/{deviceId}/comandos/{actuator}/{commandId}`: orden inmutable creada por app autorizada.
-- `dispositivos/{deviceId}/commandPointers/{actuator}`: selección de la orden vigente.
-- `dispositivos/{deviceId}/commandAcks/{actuator}/{commandId}`: resultado publicado por gateway tras respuesta del Mega.
+- `dispositivos/{deviceId}/commandPointers/{actuator}`: selección de la orden más reciente solicitada.
+- `dispositivos/{deviceId}/commandAcks/{actuator}/{commandId}`: resultado terminal persistido por gateway.
 - `dispositivos/{deviceId}/camara`: ESP32-CAM publica metadatos legacy.
 
 ### Storage
