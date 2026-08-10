@@ -1,21 +1,28 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import '../models/device_command.dart';
 import 'firebase_init.dart';
 import 'wokwi_service.dart';
 
-/// Lee la telemetría del hardware real desde Firebase Realtime Database
-/// y la convierte en el mismo tipo [LecturaSensor] que usa el simulador,
-/// para que todos los providers/widgets funcionen sin cambios. También
-/// permite escribir comandos hacia el dispositivo (control de relés).
+/// Acceso RTDB para telemetría y comandos del hardware real.
 ///
-/// Cada dispositivo físico escribe bajo su propio ID:
-///   /dispositivos/{deviceId}/telemetria   ← el firmware escribe, la app lee
-///   /dispositivos/{deviceId}/comandos     ← la app escribe, el firmware lee
-/// El usuario vincula ese ID a su cuenta desde la app.
+/// Contrato de comandos v2:
+///   /dispositivos/{deviceId}/comandos/{actuator}
+///     commandId   String único por solicitud
+///     value       bool
+///     issuedAt    timestamp RTDB generado por servidor (ms)
+///     ttlMs       vida máxima del comando
+///     requestedBy UID autenticado
+///
+/// El gateway publica la confirmación del controlador local en:
+///   /dispositivos/{deviceId}/commandAcks/{actuator}
+///     commandId, status, code, at
 class RTDBService {
   RTDBService._();
   static final RTDBService instance = RTDBService._();
 
-  /// Stream de telemetría del dispositivo [deviceId] (ej. "HS-001").
+  static const int commandTtlMs = 10000;
+
   Stream<LecturaSensor> streamFor(String deviceId) {
     if (!firebaseReady || deviceId.isEmpty) return const Stream.empty();
 
@@ -29,15 +36,15 @@ class RTDBService {
           return LecturaSensor(
             ph: _num(raw['ph'] ?? raw['pH']) ?? 7.0,
             ec: _num(raw['ec']) ?? 0.0,
-            tempAmbiente: _num(raw['temp_aire'] ?? raw['temperatura']) ?? 24.0,
+            tempAmbiente:
+                _num(raw['temp_aire'] ?? raw['temperatura']) ?? 24.0,
             humedadAmbiente: _num(raw['humedad']) ?? 60.0,
             tempAgua: _num(raw['temp_agua']) ?? 20.0,
             nivelAgua: _num(raw['nivel_agua']) ?? 0.0,
             mode: 'eco',
-            // Mismo orden que el simulador: [nutrientes, pH-(sin actuador real), luz, bomba, auxiliar]
             relays: [
               _bool(raw['relay_nutrientes']) ? 1 : 0,
-              0, // no existe bomba de pH- física en este hardware
+              0,
               _bool(raw['relay_luz']) ? 1 : 0,
               _bool(raw['relay_bomba']) ? 1 : 0,
               _bool(raw['relay_auxiliar']) ? 1 : 0,
@@ -47,39 +54,82 @@ class RTDBService {
         });
   }
 
-  /// Envía un comando al dispositivo [deviceId] escribiendo en su nodo
-  /// `comandos` de RTDB. El gateway (ESP8266) sondea este nodo y lo
-  /// reenvía por UART al controlador local (Mega).
+  /// Envía un comando v2 y devuelve su [commandId].
   ///
-  /// Comandos soportados por el hardware real:
-  /// - 'luz' / 'auxiliar': estado sostenido (toggle) — [valor] "1"=ON, "0"=OFF
-  /// - 'bomba' / 'regar' (alias de nutrientes): disparo momentáneo — cualquier
-  ///   valor no vacío dispara el pulso de 5s en el firmware
-  ///
-  /// Comandos sin actuador físico en este hardware ('ph', 'rellenar', 'modo')
-  /// se ignoran silenciosamente: no hay bomba de pH- ni válvula de rellenado.
-  Future<void> enviarComando(String deviceId, String cmd, String value) async {
-    if (!firebaseReady || deviceId.isEmpty) return;
-    final ref = FirebaseDatabase.instance.ref('dispositivos/$deviceId/comandos');
+  /// El identificador se obtiene de una push key de RTDB, pero el comando se
+  /// guarda en un slot fijo por actuador. Esto limita cada actuador a una
+  /// solicitud vigente a la vez y evita depender de un booleano momentáneo.
+  Future<String?> enviarComando(
+    String deviceId,
+    String cmd,
+    String value,
+  ) async {
+    if (!firebaseReady || deviceId.isEmpty) return null;
 
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null || uid.isEmpty) return null;
+
+    final normalized = _normalizeCommand(cmd, value);
+    if (normalized == null) return null;
+
+    final root = FirebaseDatabase.instance.ref();
+    final commandId = root.push().key;
+    if (commandId == null || commandId.isEmpty) return null;
+
+    final commandRef = root.child(
+      'dispositivos/$deviceId/comandos/${normalized.actuator}',
+    );
+
+    await commandRef.set({
+      'commandId': commandId,
+      'value': normalized.value,
+      'issuedAt': ServerValue.timestamp,
+      'ttlMs': commandTtlMs,
+      'requestedBy': uid,
+    });
+
+    return commandId;
+  }
+
+  Stream<DeviceCommandAck> ackStreamFor(
+    String deviceId,
+    String actuator,
+  ) {
+    if (!firebaseReady || deviceId.isEmpty || !_validActuator(actuator)) {
+      return const Stream.empty();
+    }
+
+    return FirebaseDatabase.instance
+        .ref('dispositivos/$deviceId/commandAcks/$actuator')
+        .onValue
+        .where((event) => event.snapshot.value is Map)
+        .map((event) {
+          final raw = Map<String, dynamic>.from(event.snapshot.value as Map);
+          return DeviceCommandAck.fromMap(actuator, raw);
+        });
+  }
+
+  _NormalizedCommand? _normalizeCommand(String cmd, String value) {
+    final boolValue = value == '1' || value == 'true';
     switch (cmd) {
       case 'luz':
-        await ref.child('luz').set(value == '1' || value == 'true');
-        break;
+        return _NormalizedCommand('luz', boolValue);
       case 'auxiliar':
-        await ref.child('auxiliar').set(value == '1' || value == 'true');
-        break;
+        return _NormalizedCommand('auxiliar', boolValue);
       case 'bomba':
-        await ref.child('bomba').set(true);
-        break;
-      case 'regar': // alias existente en la UI para dosificación de nutrientes
-        await ref.child('nutrientes').set(true);
-        break;
+        return const _NormalizedCommand('bomba', true);
+      case 'regar':
+        return const _NormalizedCommand('nutrientes', true);
       default:
-        // 'ph', 'rellenar', 'modo': sin actuador físico en este hardware.
-        break;
+        return null;
     }
   }
+
+  bool _validActuator(String actuator) =>
+      actuator == 'luz' ||
+      actuator == 'auxiliar' ||
+      actuator == 'bomba' ||
+      actuator == 'nutrientes';
 
   static double? _num(dynamic v) {
     if (v == null) return null;
@@ -94,4 +144,11 @@ class RTDBService {
     if (v is num) return v != 0;
     return v.toString() == 'true';
   }
+}
+
+class _NormalizedCommand {
+  final String actuator;
+  final bool value;
+
+  const _NormalizedCommand(this.actuator, this.value);
 }
