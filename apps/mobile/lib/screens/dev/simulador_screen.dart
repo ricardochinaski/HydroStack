@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/colors.dart';
 import '../../theme/typography.dart';
+import '../../providers/device_provider.dart';
 import '../../providers/wokwi_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/wokwi_service.dart';
-import '../../services/firestore_service.dart';
 
 class SimuladorScreen extends ConsumerStatefulWidget {
   const SimuladorScreen({super.key});
@@ -28,15 +28,16 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
     super.dispose();
   }
 
-  Future<void> _vincularDispositivo() async {
+  Future<void> _guardarIdDesarrollo() async {
     final id = _deviceController.text.trim().toUpperCase();
     if (id.isEmpty) return;
-    // Persiste localmente y en el perfil Firestore del usuario.
-    await ref.read(settingsProvider.notifier).setDeviceId(id);
-    await ref.read(firestoreServiceProvider).saveDeviceId(id);
+    await ref.read(settingsProvider.notifier).setDevelopmentDeviceId(id);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Dispositivo $id vinculado a tu cuenta'), backgroundColor: AppColors.circuit),
+        SnackBar(
+          content: Text('$id guardado solo para desarrollo. No otorga ownership.'),
+          backgroundColor: AppColors.info,
+        ),
       );
     }
   }
@@ -71,11 +72,12 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
     final conectado = ref.watch(wokwiConnectionProvider);
     final simulando = ref.read(wokwiServiceProvider).isSimulating;
     final lecturasAsync = ref.watch(wokwiLecturaProvider);
-    final usarHardware = ref.watch(settingsProvider.select((s) => s.usarHardware));
+    final settings = ref.watch(settingsProvider);
+    final usarHardware = settings.usarHardware;
+    final authorizedDevice = ref.watch(authorizedDeviceProvider);
 
-    // Precarga el ID vinculado en el campo (una sola vez).
     if (!_deviceInicializado) {
-      _deviceController.text = ref.read(settingsProvider).deviceId;
+      _deviceController.text = settings.developmentDeviceId;
       _deviceInicializado = true;
     }
 
@@ -91,8 +93,6 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // ── Toggle Hardware / Simulador ─────────────────────────
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -112,7 +112,7 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        usarHardware ? 'HARDWARE REAL  (NodeMCU)' : 'SIMULADOR LOCAL',
+                        usarHardware ? 'HARDWARE / RTDB' : 'SIMULADOR LOCAL',
                         style: AppTypography.techLabelSmall.copyWith(
                           color: usarHardware ? AppColors.circuit : AppColors.gris,
                         ),
@@ -129,151 +129,190 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
                   const SizedBox(height: 6),
                   Text(
                     usarHardware
-                        ? 'Leyendo telemetría en vivo desde Firebase RTDB.\nAsegúrate de que el NodeMCU esté encendido y conectado a Wi-Fi.'
-                        : 'Datos generados por el simulador interno.\nNo se requiere ningún hardware físico.',
+                        ? 'Producción usa solo dispositivos cuyo ownership fue validado en Firestore. El ID manual está aislado como modo de desarrollo.'
+                        : 'Datos generados por el simulador interno. No se requiere ningún hardware físico.',
                     style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.gris, height: 1.5),
                   ),
                   if (usarHardware) ...[
                     const SizedBox(height: 14),
-                    Text('DISPOSITIVO VINCULADO',
-                      style: AppTypography.techLabelSmall.copyWith(color: AppColors.gris)),
-                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
-                          child: TextField(
-                            controller: _deviceController,
-                            textCapitalization: TextCapitalization.characters,
-                            style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13, color: Colors.white, letterSpacing: 1),
-                            decoration: InputDecoration(
-                              hintText: 'HS-001',
-                              hintStyle: TextStyle(color: AppColors.gris.withValues(alpha: 0.5)),
-                              prefixIcon: Icon(Icons.qr_code_2_rounded, size: 18, color: AppColors.circuit),
-                              filled: true,
-                              fillColor: const Color(0xFF1A1D1C),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide(color: AppColors.borde.withValues(alpha: 0.3)),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                              isDense: true,
-                            ),
+                          child: Text(
+                            'MODO DEV MANUAL',
+                            style: AppTypography.techLabelSmall.copyWith(color: AppColors.gris),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          onPressed: _vincularDispositivo,
-                          icon: const Icon(Icons.link_rounded, size: 16),
-                          label: const Text('VINCULAR', style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 10, letterSpacing: 1)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.circuit,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
+                        Switch(
+                          value: settings.useDevelopmentDevice,
+                          activeThumbColor: AppColors.warning,
+                          onChanged: (v) => ref.read(settingsProvider.notifier).setUseDevelopmentDevice(v),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.circuit.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'RTDB: dispositivos/${ref.watch(settingsProvider.select((s) => s.deviceId))}/telemetria',
-                        style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 10, color: AppColors.circuit),
+                    Text(
+                      settings.useDevelopmentDevice
+                          ? 'ADVERTENCIA: el ID manual es solo laboratorio y no demuestra propiedad del dispositivo.'
+                          : 'Modo real: el acceso se resuelve desde devices/{deviceId}.ownerUid.',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 10.5,
+                        color: settings.useDevelopmentDevice ? AppColors.warning : AppColors.gris,
+                        height: 1.4,
                       ),
                     ),
+                    const SizedBox(height: 10),
+                    if (settings.useDevelopmentDevice) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _deviceController,
+                              textCapitalization: TextCapitalization.characters,
+                              style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 13, color: Colors.white, letterSpacing: 1),
+                              decoration: InputDecoration(
+                                labelText: 'ID DESARROLLO',
+                                hintText: 'HS-001',
+                                hintStyle: TextStyle(color: AppColors.gris.withValues(alpha: 0.5)),
+                                prefixIcon: Icon(Icons.science_outlined, size: 18, color: AppColors.warning),
+                                filled: true,
+                                fillColor: const Color(0xFF1A1D1C),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide(color: AppColors.borde.withValues(alpha: 0.3)),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: _guardarIdDesarrollo,
+                            icon: const Icon(Icons.save_outlined, size: 16),
+                            label: const Text('GUARDAR', style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 9, letterSpacing: 1)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.warning,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 13),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'DEV RTDB: dispositivos/${settings.developmentDeviceId}/telemetria',
+                        style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 10, color: AppColors.warning),
+                      ),
+                    ] else ...[
+                      authorizedDevice.when(
+                        data: (device) => Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.circuit.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            device == null
+                                ? 'SIN DISPOSITIVO REAL AUTORIZADO\nEl claim seguro todavía está pendiente.'
+                                : 'AUTORIZADO: ${device.alias} (${device.deviceId})\nRTDB: dispositivos/${device.deviceId}/telemetria',
+                            style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 10, color: device == null ? AppColors.gris : AppColors.circuit, height: 1.5),
+                          ),
+                        ),
+                        loading: () => const LinearProgressIndicator(),
+                        error: (_, _) => Text(
+                          'No se pudo verificar ownership.',
+                          style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.danger),
+                        ),
+                      ),
+                    ],
                   ],
                 ],
               ),
             ),
             const SizedBox(height: 16),
-
-            // --- Estado + control principal (solo visible en modo simulador) ---
             if (!usarHardware) ...[
-            Row(
-              children: [
-                Container(width: 8, height: 8, decoration: BoxDecoration(
-                  color: conectado ? AppColors.circuit : AppColors.danger,
-                  shape: BoxShape.circle,
-                )),
-                const SizedBox(width: 6),
-                Text(
-                  conectado ? (simulando ? 'SIMULANDO (LOCAL)' : 'CONECTADO (WS)') : 'DETENIDO',
-                  style: AppTypography.techLabelSmall.copyWith(color: conectado ? AppColors.circuit : AppColors.danger),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: conectado ? _desconectar : _iniciarSimulacion,
-                icon: Icon(conectado ? Icons.stop_rounded : Icons.play_arrow_rounded, size: 20),
-                label: Text(
-                  conectado ? 'DETENER' : 'INICIAR SIMULACIÓN',
-                  style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 12, letterSpacing: 1),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: conectado ? AppColors.danger : AppColors.circuit,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              Row(
+                children: [
+                  Container(width: 8, height: 8, decoration: BoxDecoration(
+                    color: conectado ? AppColors.circuit : AppColors.danger,
+                    shape: BoxShape.circle,
+                  )),
+                  const SizedBox(width: 6),
+                  Text(
+                    conectado ? (simulando ? 'SIMULANDO (LOCAL)' : 'CONECTADO (WS)') : 'DETENIDO',
+                    style: AppTypography.techLabelSmall.copyWith(color: conectado ? AppColors.circuit : AppColors.danger),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: conectado ? _desconectar : _iniciarSimulacion,
+                  icon: Icon(conectado ? Icons.stop_rounded : Icons.play_arrow_rounded, size: 20),
+                  label: Text(
+                    conectado ? 'DETENER' : 'INICIAR SIMULACIÓN',
+                    style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 12, letterSpacing: 1),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: conectado ? AppColors.danger : AppColors.circuit,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            // --- Opción avanzada: WebSocket real ---
-            if (!conectado) ...[
-              GestureDetector(
-                onTap: () => setState(() => _mostrarWs = !_mostrarWs),
-                child: Row(
-                  children: [
-                    Icon(_mostrarWs ? Icons.expand_less : Icons.expand_more, size: 16, color: AppColors.gris),
-                    const SizedBox(width: 4),
-                    Text('Avanzado: conectar a Wokwi real (WebSocket)',
-                      style: AppTypography.techLabelSmall.copyWith(color: AppColors.gris)),
-                  ],
+              const SizedBox(height: 8),
+              if (!conectado) ...[
+                GestureDetector(
+                  onTap: () => setState(() => _mostrarWs = !_mostrarWs),
+                  child: Row(
+                    children: [
+                      Icon(_mostrarWs ? Icons.expand_less : Icons.expand_more, size: 16, color: AppColors.gris),
+                      const SizedBox(width: 4),
+                      Text('Avanzado: conectar a Wokwi real (WebSocket)',
+                        style: AppTypography.techLabelSmall.copyWith(color: AppColors.gris)),
+                    ],
+                  ),
                 ),
-              ),
-              if (_mostrarWs) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _urlController,
-                        style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 12, color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: 'ws://localhost:49152',
-                          hintStyle: TextStyle(color: AppColors.gris.withValues(alpha: 0.5)),
-                          filled: true,
-                          fillColor: const Color(0xFF1A1D1C),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.borde.withValues(alpha: 0.3))),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                if (_mostrarWs) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _urlController,
+                          style: const TextStyle(fontFamily: 'JetBrains Mono', fontSize: 12, color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: 'ws://localhost:49152',
+                            hintStyle: TextStyle(color: AppColors.gris.withValues(alpha: 0.5)),
+                            filled: true,
+                            fillColor: const Color(0xFF1A1D1C),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.borde.withValues(alpha: 0.3))),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: _conectando ? null : _conectarWs,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.info,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: _conectando ? null : _conectarWs,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.info,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                        ),
+                        child: _conectando
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Text('WS', style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 10)),
                       ),
-                      child: _conectando
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('WS', style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 10)),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ],
             ],
-            ], // end if (!usarHardware)
             const SizedBox(height: 8),
             Text('TELEMETRÍA EN VIVO', style: AppTypography.techLabel.copyWith(color: AppColors.circuit)),
             const SizedBox(height: 12),
@@ -283,7 +322,7 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
                 padding: const EdgeInsets.all(40),
                 alignment: Alignment.center,
                 child: Text(
-                  conectado ? 'Esperando telemetría...' : 'Pulsa INICIAR SIMULACIÓN para ver datos en vivo.',
+                  conectado ? 'Esperando telemetría...' : 'Esperando fuente de datos...',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontFamily: 'Inter', color: AppColors.gris, fontSize: 13),
                 ),
