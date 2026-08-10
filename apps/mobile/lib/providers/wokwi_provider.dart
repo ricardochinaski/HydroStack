@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/wokwi_service.dart';
 import '../services/rtdb_service.dart';
-import '../providers/settings_provider.dart';
+import 'device_provider.dart';
+import 'settings_provider.dart';
 import '../models/lectura_sensor.dart' as model;
 import '../models/user.dart';
 
@@ -18,41 +19,63 @@ final rtdbServiceProvider = Provider<RTDBService>((ref) => RTDBService.instance)
 /// Momento en que llegó la última lectura (para detectar pérdida de señal).
 final ultimaLecturaProvider = StateProvider<DateTime?>((ref) => null);
 
-/// Stream de telemetría activa. La fuente se auto-gestiona aquí:
-/// - usarHardware = true  → Firebase RTDB del dispositivo vinculado
-///                          (detiene el simulador local si estaba corriendo)
-/// - usarHardware = false → Simulador local, arrancado automáticamente
-/// Todos los providers/widgets que consumen este stream no necesitan cambios.
+/// Stream de telemetría activa.
+///
+/// Producción: el ID preferido local nunca basta por sí solo. Se usa únicamente
+/// el dispositivo que [authorizedDeviceProvider] verificó contra
+/// `devices/{deviceId}.ownerUid` en Firestore.
+///
+/// Desarrollo: un ID manual se permite solo cuando el usuario habilitó de forma
+/// explícita `useDevelopmentDevice`. Ese modo no representa ownership real.
 final wokwiLecturaProvider = StreamProvider<LecturaSensor>((ref) {
-  final usarHardware = ref.watch(settingsProvider.select((s) => s.usarHardware));
+  final settings = ref.watch(settingsProvider);
   final sim = ref.watch(wokwiServiceProvider);
 
-  if (usarHardware) {
+  if (settings.usarHardware) {
     if (sim.isSimulating) sim.stopSimulation();
-    final deviceId = ref.watch(settingsProvider.select((s) => s.deviceId));
-    return ref.watch(rtdbServiceProvider).streamFor(deviceId);
+
+    if (settings.useDevelopmentDevice) {
+      return ref.watch(rtdbServiceProvider).streamFor(
+            settings.developmentDeviceId,
+          );
+    }
+
+    final authorized = ref.watch(authorizedDeviceProvider).valueOrNull;
+    if (authorized == null) return const Stream.empty();
+    return ref.watch(rtdbServiceProvider).streamFor(authorized.deviceId);
   }
 
-  // Fuente simulador: arranca solo si no hay conexión activa (WS o sim).
   if (!sim.isConnected) sim.startSimulation();
   return sim.stream;
 });
 
-/// Punto único para enviar comandos, sin importar la fuente activa:
-/// - usarHardware = true  → escribe en Firebase RTDB (el gateway lo reenvía
-///                          por UART al controlador local real)
-/// - usarHardware = false → actúa sobre el estado interno del simulador
-/// Toda la UI (botones de riego, luz, nutrientes, etc.) debe llamar esta
-/// función en vez de invocar wokwiServiceProvider o rtdbServiceProvider
-/// directamente, para funcionar igual en ambos modos.
+/// Punto único para enviar comandos, sin importar la fuente activa.
+///
+/// En hardware real de producción, el comando solo se envía si Firestore
+/// confirma que el usuario autenticado es owner del dispositivo seleccionado.
 Future<void> enviarComando(WidgetRef ref, String cmd, String value) async {
-  final usarHardware = ref.read(settingsProvider).usarHardware;
-  if (usarHardware) {
-    final deviceId = ref.read(settingsProvider).deviceId;
-    await ref.read(rtdbServiceProvider).enviarComando(deviceId, cmd, value);
-  } else {
-    await ref.read(wokwiServiceProvider).sendCommand(cmd, value);
+  final settings = ref.read(settingsProvider);
+  if (settings.usarHardware) {
+    if (settings.useDevelopmentDevice) {
+      await ref.read(rtdbServiceProvider).enviarComando(
+            settings.developmentDeviceId,
+            cmd,
+            value,
+          );
+      return;
+    }
+
+    final authorized = await ref.read(authorizedDeviceProvider.future);
+    if (authorized == null) return;
+    await ref.read(rtdbServiceProvider).enviarComando(
+          authorized.deviceId,
+          cmd,
+          value,
+        );
+    return;
   }
+
+  await ref.read(wokwiServiceProvider).sendCommand(cmd, value);
 }
 
 /// Convierte la telemetría cruda en la lista de sensores que la app muestra,
