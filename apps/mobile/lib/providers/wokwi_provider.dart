@@ -41,7 +41,7 @@ final wokwiLecturaProvider = StreamProvider<LecturaSensor>((ref) {
     }
 
     final authorized = ref.watch(authorizedDeviceProvider).valueOrNull;
-    if (authorized == null) return const Stream.empty();
+    if (authorized == null) return const Stream<LecturaSensor>.empty();
     return ref.watch(rtdbServiceProvider).streamFor(authorized.deviceId);
   }
 
