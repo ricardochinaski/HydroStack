@@ -1,0 +1,12 @@
+{
+  "name": "hydrostack-firebase-rules-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --project hydrostack-rules-test --config ../firebase.json --only firestore,database,storage \"node --test rules.test.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "latest",
+    "firebase-tools": "latest"
+  }
+}
