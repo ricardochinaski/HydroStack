@@ -16,8 +16,9 @@ import 'wokwi_service.dart';
 ///
 ///   /dispositivos/{deviceId}/commandPointers/{actuator} = commandId
 ///
-/// El registro del comando es inmutable. El puntero puede avanzar a una nueva
-/// orden, pero nunca modifica la orden anterior.
+/// El registro del comando es inmutable. Primero se crea la orden y solo si esa
+/// escritura tiene éxito se avanza el puntero. Un fallo en el segundo paso puede
+/// dejar un registro huérfano, pero nunca ejecutar un comando incompleto.
 ///
 /// El gateway publica la confirmación del controlador local en:
 ///   /dispositivos/{deviceId}/commandAcks/{actuator}/{commandId}
@@ -59,9 +60,8 @@ class RTDBService {
         });
   }
 
-  /// Crea una orden v2 inmutable y avanza el puntero del actuador en una sola
-  /// actualización multi-ruta. Devuelve el commandId que debe usarse para
-  /// correlacionar el ACK.
+  /// Crea una orden v2 inmutable y devuelve el [commandId] que correlaciona el
+  /// ACK. El puntero solo se mueve después de que el registro quedó persistido.
   Future<String?> enviarComando(
     String deviceId,
     String cmd,
@@ -80,19 +80,22 @@ class RTDBService {
     if (commandId == null || commandId.isEmpty) return null;
 
     final base = 'dispositivos/$deviceId';
-    final envelopePath =
-        '$base/comandos/${normalized.actuator}/$commandId';
-    final pointerPath = '$base/commandPointers/${normalized.actuator}';
+    final commandRef = root.child(
+      '$base/comandos/${normalized.actuator}/$commandId',
+    );
+    final pointerRef = root.child(
+      '$base/commandPointers/${normalized.actuator}',
+    );
 
-    await root.update({
-      '$envelopePath/commandId': commandId,
-      '$envelopePath/value': normalized.value,
-      '$envelopePath/issuedAt': ServerValue.timestamp,
-      '$envelopePath/ttlMs': commandTtlMs,
-      '$envelopePath/requestedBy': uid,
-      pointerPath: commandId,
+    await commandRef.set({
+      'commandId': commandId,
+      'value': normalized.value,
+      'issuedAt': ServerValue.timestamp,
+      'ttlMs': commandTtlMs,
+      'requestedBy': uid,
     });
 
+    await pointerRef.set(commandId);
     return commandId;
   }
 
