@@ -196,6 +196,16 @@ test('commandId fuera del tamaño aceptado es rechazado', async () => {
   );
 });
 
+test('commandId con delimitador UART es rechazado', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  const unsafeId = 'bad|id001';
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/comandos/luz/${unsafeId}`).set(
+      commandEnvelope('user-a', unsafeId),
+    ),
+  );
+});
+
 test('issuedAt futuro es rechazado por reloj servidor', async () => {
   const db = testEnv.authenticatedContext('user-a').database();
   const id = 'cmd-future';
