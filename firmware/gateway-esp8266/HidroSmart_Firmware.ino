@@ -32,13 +32,11 @@
 #include <NTPClient.h>
 #include <WiFiUDP.h>
 
-// ── CREDENCIALES ─────────────────────────────────────────────────
 #define WIFI_SSID      "TU_WIFI_SSID"
 #define WIFI_PASSWORD  "TU_WIFI_PASSWORD"
 #define FIREBASE_HOST  "TU_FIREBASE_RTDB_HOST"
 #define FIREBASE_AUTH  "TU_FIREBASE_LEGACY_TOKEN"
 
-// ── IDENTIDAD LEGACY/DEV DEL DISPOSITIVO ─────────────────────────
 #define DEVICE_ID       "HS-001"
 #define RUTA_TELEMETRIA "/dispositivos/" DEVICE_ID "/telemetria"
 #define RUTA_INFO       "/dispositivos/" DEVICE_ID "/info"
@@ -46,22 +44,19 @@
 #define RUTA_POINTERS   "/dispositivos/" DEVICE_ID "/commandPointers"
 #define RUTA_ACKS       "/dispositivos/" DEVICE_ID "/commandAcks"
 
-// ── OBJETOS ──────────────────────────────────────────────────────
 WiFiUDP        ntpUDP;
-NTPClient      timeClient(ntpUDP, "pool.ntp.org", 0); // UTC real
+NTPClient      timeClient(ntpUDP, "pool.ntp.org", 0);
 
 FirebaseData   fbData;
 FirebaseData   fbCmd;
 FirebaseConfig fbConfig;
 FirebaseAuth   fbAuth;
 
-// ── ESTADO RECIBIDO DEL MEGA ─────────────────────────────────────
 float gTemp = 0, gHum = 0, gPh = 7.0;
 bool  gBomba = false, gNutrientes = false, gLuz = false, gAux = false;
 
 String uartBuf = "";
 
-// ── COMMAND PROTOCOL V2 ──────────────────────────────────────────
 static const uint8_t ACTUATOR_COUNT = 4;
 const char* ACTUATORS[ACTUATOR_COUNT] = {
   "luz", "auxiliar", "bomba", "nutrientes"
@@ -78,13 +73,11 @@ const uint8_t MAX_UART_ATTEMPTS = 3;
 const unsigned long UART_RETRY_MS = 1500UL;
 const unsigned long MIN_VALID_EPOCH = 1700000000UL;
 
-// ── TIMING ────────────────────────────────────────────────────────
 const unsigned long T_CLOUD     = 10000UL;
 const unsigned long T_CMD_POLL  = 1000UL;
 unsigned long tCloud = 0;
 unsigned long tCmdPoll = 0;
 
-// =================================================================
 void conectarWiFi();
 void leerSerialMega();
 void parsearCSV(const String& linea);
@@ -102,7 +95,6 @@ String uartTypeFor(const char* actuator);
 String epochToISO8601(unsigned long epoch);
 uint64_t nowEpochMs();
 
-// =================================================================
 void setup() {
   Serial.begin(9600);
   Serial.swap();
@@ -126,12 +118,8 @@ void setup() {
     info.set("arranque", epochToISO8601(timeClient.getEpochTime()));
     Firebase.setJSON(fbData, RUTA_INFO, info);
   }
-
-  // No inicializar ni borrar comandos desde firmware. Un reinicio del gateway
-  // nunca debe sobrescribir una orden válida de la app.
 }
 
-// =================================================================
 void loop() {
   leerSerialMega();
   reintentarPendientes();
@@ -149,7 +137,6 @@ void loop() {
   }
 }
 
-// =================================================================
 void conectarWiFi() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   unsigned long t0 = millis();
@@ -158,7 +145,6 @@ void conectarWiFi() {
   }
 }
 
-// =================================================================
 void leerSerialMega() {
   while (Serial.available()) {
     char c = (char)Serial.read();
@@ -176,7 +162,6 @@ void leerSerialMega() {
   }
 }
 
-// Formato: "temp,hum,ph,bomba,nutrientes,luz,aux"
 void parsearCSV(const String& linea) {
   int idx[6];
   int campo = 0;
@@ -194,7 +179,6 @@ void parsearCSV(const String& linea) {
   gAux        = linea.substring(idx[5] + 1).toInt() == 1;
 }
 
-// Formato: ACK|commandId|STATUS|CODE
 void parsearAckMega(const String& linea) {
   int p1 = linea.indexOf('|');
   int p2 = linea.indexOf('|', p1 + 1);
@@ -216,7 +200,6 @@ void parsearAckMega(const String& linea) {
   }
 }
 
-// =================================================================
 void publicarTelemetria() {
   if (WiFi.status() != WL_CONNECTED) return;
 
@@ -235,12 +218,9 @@ void publicarTelemetria() {
   json.set("relay_auxiliar", gAux);
   json.set("timestamp", epochToISO8601(timeClient.getEpochTime()));
 
-  // No imprimir errores por Serial: después de Serial.swap(), este puerto es el
-  // canal UART hacia el Mega y cualquier log podría parecer una trama de control.
   Firebase.setJSON(fbData, RUTA_TELEMETRIA, json);
 }
 
-// =================================================================
 void sondearComandos() {
   if (WiFi.status() != WL_CONNECTED) return;
   timeClient.update();
@@ -288,38 +268,43 @@ void procesarSlot(uint8_t index) {
   String requestedBy = fbCmd.stringData();
   requestedBy.trim();
 
-  lastSeenId[index] = commandId;
-
   if (requestedBy.length() == 0 || ttlMs < 1000 || ttlMs > 15000 || issuedAt == 0) {
+    lastSeenId[index] = commandId;
     publicarAck(ACTUATORS[index], commandId, "REJECTED", "INVALID_ENVELOPE");
     return;
   }
 
   unsigned long epoch = timeClient.getEpochTime();
   if (epoch < MIN_VALID_EPOCH) {
-    publicarAck(ACTUATORS[index], commandId, "REJECTED", "TIME_UNSYNCED");
+    // NTP es una dependencia transitoria. No marcar el ID como visto ni emitir
+    // un rechazo final: el siguiente poll volverá a intentar mientras el TTL
+    // del comando siga vigente en RTDB.
     return;
   }
 
   uint64_t nowMs = (uint64_t)epoch * 1000ULL;
   uint64_t expiresAt = issuedAt + (uint64_t)ttlMs;
   if (nowMs > expiresAt) {
+    lastSeenId[index] = commandId;
     publicarAck(ACTUATORS[index], commandId, "EXPIRED", "TTL_EXPIRED");
     return;
   }
 
   if ((strcmp(ACTUATORS[index], "bomba") == 0 ||
        strcmp(ACTUATORS[index], "nutrientes") == 0) && !value) {
+    lastSeenId[index] = commandId;
     publicarAck(ACTUATORS[index], commandId, "REJECTED", "INVALID_VALUE");
     return;
   }
 
   String type = uartTypeFor(ACTUATORS[index]);
   if (type.length() == 0) {
+    lastSeenId[index] = commandId;
     publicarAck(ACTUATORS[index], commandId, "REJECTED", "UNKNOWN_ACTUATOR");
     return;
   }
 
+  lastSeenId[index] = commandId;
   pendingId[index] = commandId;
   pendingFrame[index] = "CMD|" + commandId + "|" + type + "|" + (value ? "1" : "0");
   pendingExpiresAt[index] = expiresAt;
@@ -408,7 +393,6 @@ uint64_t nowEpochMs() {
   return (uint64_t)epoch * 1000ULL;
 }
 
-// =================================================================
 String epochToISO8601(unsigned long epoch) {
   static const uint8_t dim[] = {31,28,31,30,31,30,31,31,30,31,30,31};
 
