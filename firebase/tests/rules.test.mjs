@@ -127,3 +127,18 @@ test('perfil puede guardar como preferencia un deviceId realmente propio', async
   }));
   await assertSucceeds(db.doc('usuarios/user-a').update({ deviceId: 'DEV-A' }));
 });
+
+test('cliente no puede crear su propia proyección deviceAccess', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  await assertFails(db.ref('deviceAccess/user-a/DEV-X').set(true));
+});
+
+test('cliente no puede escribir comandos fuera del contrato', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  await assertFails(db.ref('dispositivos/DEV-A/comandos/reiniciar').set(true));
+});
+
+test('cliente no puede borrar un campo de comando', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  await assertFails(db.ref('dispositivos/DEV-A/comandos/bomba').remove());
+});
