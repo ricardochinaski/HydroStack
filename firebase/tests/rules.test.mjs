@@ -6,7 +6,7 @@ import {
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
 
-const projectId = 'hydrostack-rules-test';
+const projectId = 'demo-hydrostack-rules-test';
 let testEnv;
 
 before(async () => {
@@ -111,12 +111,12 @@ test('CASO 7: usuario A no puede cambiar ownerUid de A a B', async () => {
 });
 
 test('perfil no puede apuntar deviceId a un dispositivo ajeno', async () => {
-  const admin = testEnv.authenticatedContext('user-a').firestore();
-  await assertSucceeds(admin.doc('usuarios/user-a').set({
+  const db = testEnv.authenticatedContext('user-a').firestore();
+  await assertSucceeds(db.doc('usuarios/user-a').set({
     uid: 'user-a',
     email: 'a@example.test',
   }));
-  await assertFails(admin.doc('usuarios/user-a').update({ deviceId: 'DEV-B' }));
+  await assertFails(db.doc('usuarios/user-a').update({ deviceId: 'DEV-B' }));
 });
 
 test('perfil puede guardar como preferencia un deviceId realmente propio', async () => {
