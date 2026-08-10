@@ -21,7 +21,7 @@ npm install
 npm test
 ```
 
-Los tests necesitan Node.js, Java y Firebase Emulator Suite (`firebase-tools`). No usan credenciales ni un proyecto Firebase de producción; el project ID de pruebas es `hydrostack-rules-test`.
+Los tests necesitan Node.js, Java y Firebase Emulator Suite (`firebase-tools`). No usan credenciales ni un proyecto Firebase de producción; el project ID de pruebas es `demo-hydrostack-rules-test`.
 
 ## Seguridad
 
