@@ -79,8 +79,8 @@ El claim seguro queda bloqueado hasta incorporar infraestructura confiable de pr
 | `dispositivos/{deviceId}/telemetria` | telemetría publicada por gateway |
 | `dispositivos/{deviceId}/info` | metadatos de arranque del gateway |
 | `dispositivos/{deviceId}/comandos` | registros inmutables de comandos v2 |
-| `dispositivos/{deviceId}/commandPointers` | ID vigente por actuador |
-| `dispositivos/{deviceId}/commandAcks` | resultado correlacionado por commandId |
+| `dispositivos/{deviceId}/commandPointers` | ID más reciente solicitado por actuador |
+| `dispositivos/{deviceId}/commandAcks` | resultado terminal correlacionado por commandId |
 | `dispositivos/{deviceId}/camara` | metadatos legacy de cámara |
 
 ### Proyección de autorización
@@ -124,13 +124,15 @@ Actuadores permitidos:
 
 Los registros de comando son create-only para clientes. No pueden editarse ni borrarse después de crearse.
 
-El ID que debe procesar el gateway se publica en:
+El ID más reciente solicitado se publica en:
 
 ```text
 /dispositivos/{deviceId}/commandPointers/{actuator}
 ```
 
-El puntero solo puede referenciar un comando existente del mismo actuador cuya `requestedBy` coincida con el UID autenticado.
+El puntero solo puede referenciar un comando existente del mismo actuador cuyo `requestedBy` coincida con el UID autenticado.
+
+El gateway mantiene, además, como máximo una orden en vuelo por actuador. Un cambio del pointer no sustituye una orden pendiente. La nueva orden espera hasta que el resultado terminal de la anterior haya quedado persistido.
 
 El resultado se publica en:
 
@@ -139,6 +141,10 @@ El resultado se publica en:
 ```
 
 Los clientes pueden leer esos ACK a través del acceso autorizado del dispositivo, pero no escribirlos.
+
+Recibir un ACK por UART no libera inmediatamente el slot del actuador. El gateway conserva en RAM el `pendingId`, `status` y `code` hasta que `Firebase.setJSON()` confirme la escritura. Si Firebase falla, reintenta la persistencia y no deja avanzar otra orden del mismo actuador.
+
+Cuando una orden ya pudo haber sido enviada al Mega pero no existe confirmación suficiente, el estado terminal es `UNKNOWN`, no `REJECTED`. Esto se usa, por ejemplo, para `MEGA_NO_ACK` o un TTL vencido mientras se esperaba ACK.
 
 El contrato completo, estados y framing UART están en `docs/commands.md`.
 
@@ -164,7 +170,7 @@ Archivos versionados:
 
 La suite cubre ownership, aislamiento A/B y además el protocolo v2: creación de comandos, inmutabilidad, timestamps, TTL, identidad `requestedBy`, commandId, punteros y prohibición de ACK cliente.
 
-Los tests deben ejecutarse en Firebase Emulator Suite antes de integrar la rama. En el entorno de edición actual no están disponibles Firebase CLI ni las dependencias instalables, por lo que no se declara un resultado de ejecución.
+Los tests deben ejecutarse en Firebase Emulator Suite antes de integrar la rama.
 
 ## Riesgos todavía abiertos
 
@@ -176,4 +182,5 @@ Los tests deben ejecutarse en Firebase Emulator Suite antes de integrar la rama.
 - falta separación estricta dev/staging/prod;
 - la cámara debe migrar de `capturas/` al contrato seguro por dispositivo;
 - la discrepancia histórica Android/Firebase debe resolverse antes de release;
+- el estado pendiente del gateway no es durable frente a reinicio;
 - los registros históricos de comandos y ACK aún no tienen política de retención/limpieza.
