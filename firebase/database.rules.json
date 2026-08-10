@@ -1,0 +1,47 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "deviceAccess": {
+      "$uid": {
+        "$deviceId": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": false,
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    },
+
+    "dispositivos": {
+      "$deviceId": {
+        ".read": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+
+        "telemetria": {
+          ".write": false
+        },
+        "info": {
+          ".write": false
+        },
+        "camara": {
+          ".write": false
+        },
+        "comandos": {
+          ".write": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+          "luz": {
+            ".validate": "newData.isBoolean()"
+          },
+          "auxiliar": {
+            ".validate": "newData.isBoolean()"
+          },
+          "bomba": {
+            ".validate": "newData.isBoolean()"
+          },
+          "nutrientes": {
+            ".validate": "newData.isBoolean()"
+          }
+        }
+      }
+    }
+  }
+}
