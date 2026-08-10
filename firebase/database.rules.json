@@ -17,66 +17,88 @@
       "$deviceId": {
         ".read": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
 
-        "telemetria": {
-          ".write": false
-        },
-        "info": {
-          ".write": false
-        },
-        "camara": {
-          ".write": false
-        },
+        "telemetria": { ".write": false },
+        "info": { ".write": false },
+        "camara": { ".write": false },
 
         "comandos": {
           "luz": {
-            ".write": "auth != null && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
-            ".validate": "newData.hasChildren(['commandId','value','issuedAt','ttlMs','requestedBy'])",
-            "commandId": { ".validate": "newData.isString()" },
-            "value": { ".validate": "newData.isBoolean()" },
-            "issuedAt": { ".validate": "newData.isNumber() && newData.val() > 0" },
-            "ttlMs": { ".validate": "newData.isNumber() && newData.val() >= 1000 && newData.val() <= 15000" },
-            "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
-            "$other": { ".validate": false }
+            "$commandId": {
+              ".write": "auth != null && !data.exists() && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+              ".validate": "newData.hasChildren(['commandId','value','issuedAt','ttlMs','requestedBy']) && newData.child('commandId').val() === $commandId",
+              "commandId": { ".validate": "newData.isString()" },
+              "value": { ".validate": "newData.isBoolean()" },
+              "issuedAt": { ".validate": "newData.isNumber() && newData.val() > 0" },
+              "ttlMs": { ".validate": "newData.isNumber() && newData.val() >= 1000 && newData.val() <= 15000" },
+              "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
+              "$other": { ".validate": false }
+            }
           },
           "auxiliar": {
-            ".write": "auth != null && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
-            ".validate": "newData.hasChildren(['commandId','value','issuedAt','ttlMs','requestedBy'])",
-            "commandId": { ".validate": "newData.isString()" },
-            "value": { ".validate": "newData.isBoolean()" },
-            "issuedAt": { ".validate": "newData.isNumber() && newData.val() > 0" },
-            "ttlMs": { ".validate": "newData.isNumber() && newData.val() >= 1000 && newData.val() <= 15000" },
-            "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
-            "$other": { ".validate": false }
+            "$commandId": {
+              ".write": "auth != null && !data.exists() && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+              ".validate": "newData.hasChildren(['commandId','value','issuedAt','ttlMs','requestedBy']) && newData.child('commandId').val() === $commandId",
+              "commandId": { ".validate": "newData.isString()" },
+              "value": { ".validate": "newData.isBoolean()" },
+              "issuedAt": { ".validate": "newData.isNumber() && newData.val() > 0" },
+              "ttlMs": { ".validate": "newData.isNumber() && newData.val() >= 1000 && newData.val() <= 15000" },
+              "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
+              "$other": { ".validate": false }
+            }
           },
           "bomba": {
-            ".write": "auth != null && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
-            ".validate": "newData.hasChildren(['commandId','value','issuedAt','ttlMs','requestedBy'])",
-            "commandId": { ".validate": "newData.isString()" },
-            "value": { ".validate": "newData.isBoolean() && newData.val() === true" },
-            "issuedAt": { ".validate": "newData.isNumber() && newData.val() > 0" },
-            "ttlMs": { ".validate": "newData.isNumber() && newData.val() >= 1000 && newData.val() <= 15000" },
-            "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
-            "$other": { ".validate": false }
+            "$commandId": {
+              ".write": "auth != null && !data.exists() && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+              ".validate": "newData.hasChildren(['commandId','value','issuedAt','ttlMs','requestedBy']) && newData.child('commandId').val() === $commandId",
+              "commandId": { ".validate": "newData.isString()" },
+              "value": { ".validate": "newData.isBoolean() && newData.val() === true" },
+              "issuedAt": { ".validate": "newData.isNumber() && newData.val() > 0" },
+              "ttlMs": { ".validate": "newData.isNumber() && newData.val() >= 1000 && newData.val() <= 15000" },
+              "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
+              "$other": { ".validate": false }
+            }
           },
           "nutrientes": {
-            ".write": "auth != null && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
-            ".validate": "newData.hasChildren(['commandId','value','issuedAt','ttlMs','requestedBy'])",
-            "commandId": { ".validate": "newData.isString()" },
-            "value": { ".validate": "newData.isBoolean() && newData.val() === true" },
-            "issuedAt": { ".validate": "newData.isNumber() && newData.val() > 0" },
-            "ttlMs": { ".validate": "newData.isNumber() && newData.val() >= 1000 && newData.val() <= 15000" },
-            "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
-            "$other": { ".validate": false }
+            "$commandId": {
+              ".write": "auth != null && !data.exists() && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+              ".validate": "newData.hasChildren(['commandId','value','issuedAt','ttlMs','requestedBy']) && newData.child('commandId').val() === $commandId",
+              "commandId": { ".validate": "newData.isString()" },
+              "value": { ".validate": "newData.isBoolean() && newData.val() === true" },
+              "issuedAt": { ".validate": "newData.isNumber() && newData.val() > 0" },
+              "ttlMs": { ".validate": "newData.isNumber() && newData.val() >= 1000 && newData.val() <= 15000" },
+              "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
+              "$other": { ".validate": false }
+            }
           },
-          "$other": {
-            ".write": false
-          }
+          "$other": { ".write": false }
+        },
+
+        "commandPointers": {
+          "luz": {
+            ".write": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+            ".validate": "newData.isString() && root.child('dispositivos').child($deviceId).child('comandos').child('luz').child(newData.val()).exists() && root.child('dispositivos').child($deviceId).child('comandos').child('luz').child(newData.val()).child('requestedBy').val() === auth.uid"
+          },
+          "auxiliar": {
+            ".write": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+            ".validate": "newData.isString() && root.child('dispositivos').child($deviceId).child('comandos').child('auxiliar').child(newData.val()).exists() && root.child('dispositivos').child($deviceId).child('comandos').child('auxiliar').child(newData.val()).child('requestedBy').val() === auth.uid"
+          },
+          "bomba": {
+            ".write": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+            ".validate": "newData.isString() && root.child('dispositivos').child($deviceId).child('comandos').child('bomba').child(newData.val()).exists() && root.child('dispositivos').child($deviceId).child('comandos').child('bomba').child(newData.val()).child('requestedBy').val() === auth.uid"
+          },
+          "nutrientes": {
+            ".write": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+            ".validate": "newData.isString() && root.child('dispositivos').child($deviceId).child('comandos').child('nutrientes').child(newData.val()).exists() && root.child('dispositivos').child($deviceId).child('comandos').child('nutrientes').child(newData.val()).child('requestedBy').val() === auth.uid"
+          },
+          "$other": { ".write": false }
         },
 
         "commandAcks": {
           ".write": false,
           "$actuator": {
-            ".validate": "newData.hasChildren(['commandId','status','code','at'])"
+            "$commandId": {
+              ".validate": "newData.hasChildren(['commandId','status','code','at']) && newData.child('commandId').val() === $commandId"
+            }
           }
         }
       }
