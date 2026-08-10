@@ -26,22 +26,57 @@
         "camara": {
           ".write": false
         },
+
         "comandos": {
           "luz": {
             ".write": "auth != null && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
-            ".validate": "newData.isBoolean()"
+            ".validate": "newData.hasChildren(['commandId','value','issuedAt','ttlMs','requestedBy'])",
+            "commandId": { ".validate": "newData.isString()" },
+            "value": { ".validate": "newData.isBoolean()" },
+            "issuedAt": { ".validate": "newData.isNumber() && newData.val() > 0" },
+            "ttlMs": { ".validate": "newData.isNumber() && newData.val() >= 1000 && newData.val() <= 15000" },
+            "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
+            "$other": { ".validate": false }
           },
           "auxiliar": {
             ".write": "auth != null && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
-            ".validate": "newData.isBoolean()"
+            ".validate": "newData.hasChildren(['commandId','value','issuedAt','ttlMs','requestedBy'])",
+            "commandId": { ".validate": "newData.isString()" },
+            "value": { ".validate": "newData.isBoolean()" },
+            "issuedAt": { ".validate": "newData.isNumber() && newData.val() > 0" },
+            "ttlMs": { ".validate": "newData.isNumber() && newData.val() >= 1000 && newData.val() <= 15000" },
+            "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
+            "$other": { ".validate": false }
           },
           "bomba": {
             ".write": "auth != null && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
-            ".validate": "newData.isBoolean()"
+            ".validate": "newData.hasChildren(['commandId','value','issuedAt','ttlMs','requestedBy'])",
+            "commandId": { ".validate": "newData.isString()" },
+            "value": { ".validate": "newData.isBoolean() && newData.val() === true" },
+            "issuedAt": { ".validate": "newData.isNumber() && newData.val() > 0" },
+            "ttlMs": { ".validate": "newData.isNumber() && newData.val() >= 1000 && newData.val() <= 15000" },
+            "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
+            "$other": { ".validate": false }
           },
           "nutrientes": {
             ".write": "auth != null && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
-            ".validate": "newData.isBoolean()"
+            ".validate": "newData.hasChildren(['commandId','value','issuedAt','ttlMs','requestedBy'])",
+            "commandId": { ".validate": "newData.isString()" },
+            "value": { ".validate": "newData.isBoolean() && newData.val() === true" },
+            "issuedAt": { ".validate": "newData.isNumber() && newData.val() > 0" },
+            "ttlMs": { ".validate": "newData.isNumber() && newData.val() >= 1000 && newData.val() <= 15000" },
+            "requestedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" },
+            "$other": { ".validate": false }
+          },
+          "$other": {
+            ".write": false
+          }
+        },
+
+        "commandAcks": {
+          ".write": false,
+          "$actuator": {
+            ".validate": "newData.hasChildren(['commandId','status','code','at'])"
           }
         }
       }
