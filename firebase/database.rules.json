@@ -27,17 +27,20 @@
           ".write": false
         },
         "comandos": {
-          ".write": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
           "luz": {
+            ".write": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
             ".validate": "newData.isBoolean()"
           },
           "auxiliar": {
+            ".write": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
             ".validate": "newData.isBoolean()"
           },
           "bomba": {
+            ".write": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
             ".validate": "newData.isBoolean()"
           },
           "nutrientes": {
+            ".write": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
             ".validate": "newData.isBoolean()"
           }
         }
