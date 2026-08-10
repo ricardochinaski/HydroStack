@@ -35,14 +35,20 @@ class FirebaseDeviceService implements DeviceService {
   Future<List<HydroStackDevice>> listOwnedDevices(String uid) async {
     if (uid.isEmpty) return const [];
     final snap = await _devices.where('ownerUid', isEqualTo: uid).get();
-    return snap.docs.map(_fromDocument).toList(growable: false);
+    return snap.docs
+        .where((doc) => _hasCanonicalIdentity(doc))
+        .map(_fromDocument)
+        .toList(growable: false);
   }
 
   @override
   Future<HydroStackDevice?> getOwnedDevice(String uid, String deviceId) async {
-    if (uid.isEmpty || deviceId.isEmpty) return null;
-    final snap = await _devices.doc(deviceId).get();
-    if (!snap.exists || snap.data() == null) return null;
+    final normalizedId = deviceId.trim();
+    if (uid.isEmpty || normalizedId.isEmpty) return null;
+    final snap = await _devices.doc(normalizedId).get();
+    if (!snap.exists || snap.data() == null || !_hasCanonicalIdentity(snap)) {
+      return null;
+    }
     final device = _fromDocument(snap);
     return device.isOwnedBy(uid) ? device : null;
   }
@@ -62,37 +68,54 @@ class FirebaseDeviceService implements DeviceService {
 
     final snap = await _devices
         .where('ownerUid', isEqualTo: uid)
-        .limit(1)
+        .limit(10)
         .get();
-    if (snap.docs.isEmpty) return null;
-    return _fromDocument(snap.docs.first);
+    for (final doc in snap.docs) {
+      if (_hasCanonicalIdentity(doc)) return _fromDocument(doc);
+    }
+    return null;
   }
 
   @override
   Future<void> updateAlias(String uid, String deviceId, String alias) async {
+    final normalizedAlias = alias.trim();
+    if (normalizedAlias.isEmpty || normalizedAlias.length > 80) {
+      throw ArgumentError('El alias debe contener entre 1 y 80 caracteres.');
+    }
+
     final owned = await getOwnedDevice(uid, deviceId);
     if (owned == null) {
       throw StateError('El dispositivo no pertenece al usuario autenticado.');
     }
-    await _devices.doc(deviceId).update({
-      'alias': alias.trim(),
+    await _devices.doc(owned.deviceId).update({
+      'alias': normalizedAlias,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  bool _hasCanonicalIdentity(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    final storedId = data?['deviceId'];
+    return storedId is String && storedId.trim() == doc.id;
   }
 
   HydroStackDevice _fromDocument(
     DocumentSnapshot<Map<String, dynamic>> doc,
   ) {
     final data = doc.data() ?? const <String, dynamic>{};
+    final rawOwnerUid = data['ownerUid'];
+    final rawAlias = data['alias'];
+    final rawStatus = data['status'];
+
     return HydroStackDevice(
-      deviceId: (data['deviceId'] as String?)?.trim().isNotEmpty == true
-          ? (data['deviceId'] as String).trim()
+      deviceId: doc.id,
+      ownerUid: rawOwnerUid is String ? rawOwnerUid : '',
+      alias: rawAlias is String && rawAlias.trim().isNotEmpty
+          ? rawAlias.trim()
           : doc.id,
-      ownerUid: (data['ownerUid'] as String?) ?? '',
-      alias: (data['alias'] as String?)?.trim().isNotEmpty == true
-          ? (data['alias'] as String).trim()
-          : doc.id,
-      status: _statusFromString(data['status'] as String?),
+      status: _statusFromString(rawStatus is String ? rawStatus : null),
       claimedAt: _date(data['claimedAt']),
       createdAt: _date(data['createdAt']),
       updatedAt: _date(data['updatedAt']),
