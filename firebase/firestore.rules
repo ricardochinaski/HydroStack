@@ -13,6 +13,7 @@ service cloud.firestore {
       return signedIn()
         && deviceId is string
         && exists(/databases/$(database)/documents/devices/$(deviceId))
+        && get(/databases/$(database)/documents/devices/$(deviceId)).data.deviceId == deviceId
         && get(/databases/$(database)/documents/devices/$(deviceId)).data.ownerUid == request.auth.uid;
     }
 
@@ -39,20 +40,26 @@ service cloud.firestore {
     }
 
     match /devices/{deviceId} {
-      // Queries must constrain ownerUid to request.auth.uid or Firestore will
-      // reject the query because rules are not filters.
-      allow read: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      // The document ID and stored deviceId must agree. Queries must also
+      // constrain ownerUid to request.auth.uid because rules are not filters.
+      allow read: if signedIn()
+        && resource.data.deviceId == deviceId
+        && resource.data.ownerUid == request.auth.uid;
 
       // Claim/creation is intentionally denied to untrusted clients until a
       // trusted provisioning backend or equivalent proof-of-possession exists.
       allow create: if false;
 
-      // Clients may only rename a device they already own. Identity, owner,
-      // status and claim timestamps are controlled by trusted infrastructure.
+      // Clients may only rename a canonical device they already own. Identity,
+      // owner, status and claim timestamps are controlled by trusted infrastructure.
       allow update: if signedIn()
+        && resource.data.deviceId == deviceId
+        && request.resource.data.deviceId == deviceId
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerUid == resource.data.ownerUid
-        && request.resource.data.deviceId == resource.data.deviceId
+        && request.resource.data.alias is string
+        && request.resource.data.alias.size() >= 1
+        && request.resource.data.alias.size() <= 80
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['alias', 'updatedAt']);
 
