@@ -7,15 +7,20 @@ import 'wokwi_service.dart';
 /// Acceso RTDB para telemetría y comandos del hardware real.
 ///
 /// Contrato de comandos v2:
-///   /dispositivos/{deviceId}/comandos/{actuator}
-///     commandId   String único por solicitud
+///   /dispositivos/{deviceId}/comandos/{actuator}/{commandId}
+///     commandId   String único e inmutable
 ///     value       bool
 ///     issuedAt    timestamp RTDB generado por servidor (ms)
 ///     ttlMs       vida máxima del comando
 ///     requestedBy UID autenticado
 ///
+///   /dispositivos/{deviceId}/commandPointers/{actuator} = commandId
+///
+/// El registro del comando es inmutable. El puntero puede avanzar a una nueva
+/// orden, pero nunca modifica la orden anterior.
+///
 /// El gateway publica la confirmación del controlador local en:
-///   /dispositivos/{deviceId}/commandAcks/{actuator}
+///   /dispositivos/{deviceId}/commandAcks/{actuator}/{commandId}
 ///     commandId, status, code, at
 class RTDBService {
   RTDBService._();
@@ -54,11 +59,9 @@ class RTDBService {
         });
   }
 
-  /// Envía un comando v2 y devuelve su [commandId].
-  ///
-  /// El identificador se obtiene de una push key de RTDB, pero el comando se
-  /// guarda en un slot fijo por actuador. Esto limita cada actuador a una
-  /// solicitud vigente a la vez y evita depender de un booleano momentáneo.
+  /// Crea una orden v2 inmutable y avanza el puntero del actuador en una sola
+  /// actualización multi-ruta. Devuelve el commandId que debe usarse para
+  /// correlacionar el ACK.
   Future<String?> enviarComando(
     String deviceId,
     String cmd,
@@ -76,16 +79,18 @@ class RTDBService {
     final commandId = root.push().key;
     if (commandId == null || commandId.isEmpty) return null;
 
-    final commandRef = root.child(
-      'dispositivos/$deviceId/comandos/${normalized.actuator}',
-    );
+    final base = 'dispositivos/$deviceId';
+    final envelopePath =
+        '$base/comandos/${normalized.actuator}/$commandId';
+    final pointerPath = '$base/commandPointers/${normalized.actuator}';
 
-    await commandRef.set({
-      'commandId': commandId,
-      'value': normalized.value,
-      'issuedAt': ServerValue.timestamp,
-      'ttlMs': commandTtlMs,
-      'requestedBy': uid,
+    await root.update({
+      '$envelopePath/commandId': commandId,
+      '$envelopePath/value': normalized.value,
+      '$envelopePath/issuedAt': ServerValue.timestamp,
+      '$envelopePath/ttlMs': commandTtlMs,
+      '$envelopePath/requestedBy': uid,
+      pointerPath: commandId,
     });
 
     return commandId;
@@ -94,13 +99,17 @@ class RTDBService {
   Stream<DeviceCommandAck> ackStreamFor(
     String deviceId,
     String actuator,
+    String commandId,
   ) {
-    if (!firebaseReady || deviceId.isEmpty || !_validActuator(actuator)) {
+    if (!firebaseReady ||
+        deviceId.isEmpty ||
+        commandId.isEmpty ||
+        !_validActuator(actuator)) {
       return const Stream.empty();
     }
 
     return FirebaseDatabase.instance
-        .ref('dispositivos/$deviceId/commandAcks/$actuator')
+        .ref('dispositivos/$deviceId/commandAcks/$actuator/$commandId')
         .onValue
         .where((event) => event.snapshot.value is Map)
         .map((event) {
