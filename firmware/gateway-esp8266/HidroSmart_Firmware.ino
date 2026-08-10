@@ -1,13 +1,14 @@
 /**
  * HidroSmart — ESP8266 NodeMCU (Gateway WiFi/Firebase)
- * v4.1 — Command protocol v2 foundation.
+ * v4.2 — Command protocol v2 hardened.
  *
  * Responsabilidades:
  *  1. Recibe telemetría CSV del Mega por UART y la publica en Firebase.
  *  2. Lee commandPointers por actuador y carga el comando inmutable asociado.
- *  3. Valida timestamp + TTL antes de reenviar al Mega.
- *  4. Reenvía cada comando incluyendo commandId y reintenta de forma acotada.
- *  5. Publica el ACK real recibido desde el Mega, indexado por commandId.
+ *  3. Valida identidad, timestamp y TTL antes de reenviar al Mega.
+ *  4. Mantiene como máximo un comando en vuelo por actuador.
+ *  5. Reintenta el mismo commandId de forma acotada.
+ *  6. No libera el actuador hasta persistir en RTDB el estado terminal.
  *
  * UART 9600 baud:
  *  Mega → ESP8266 telemetría:
@@ -16,13 +17,6 @@
  *    "CMD|<commandId>|<type>|<0|1>\n"
  *  Mega → ESP8266 ACK:
  *    "ACK|<commandId>|<status>|<code>\n"
- *
- * RTDB:
- *  /dispositivos/{DEVICE_ID}/comandos/{actuator}/{commandId}
- *    commandId, value, issuedAt, ttlMs, requestedBy
- *  /dispositivos/{DEVICE_ID}/commandPointers/{actuator} = commandId
- *  /dispositivos/{DEVICE_ID}/commandAcks/{actuator}/{commandId}
- *    commandId, status, code, at
  *
  * La autenticación IoT sigue siendo legacy en esta fase y se migrará aparte.
  */
@@ -65,12 +59,16 @@ const char* ACTUATORS[ACTUATOR_COUNT] = {
 String lastSeenId[ACTUATOR_COUNT];
 String pendingId[ACTUATOR_COUNT];
 String pendingFrame[ACTUATOR_COUNT];
+String pendingAckStatus[ACTUATOR_COUNT];
+String pendingAckCode[ACTUATOR_COUNT];
 uint64_t pendingExpiresAt[ACTUATOR_COUNT] = {0, 0, 0, 0};
 unsigned long pendingLastSend[ACTUATOR_COUNT] = {0, 0, 0, 0};
+unsigned long pendingAckLastAttempt[ACTUATOR_COUNT] = {0, 0, 0, 0};
 uint8_t pendingAttempts[ACTUATOR_COUNT] = {0, 0, 0, 0};
 
 const uint8_t MAX_UART_ATTEMPTS = 3;
 const unsigned long UART_RETRY_MS = 1500UL;
+const unsigned long ACK_RETRY_MS = 1500UL;
 const unsigned long MIN_VALID_EPOCH = 1700000000UL;
 
 const unsigned long T_CLOUD     = 10000UL;
@@ -87,11 +85,15 @@ void sondearComandos();
 void procesarSlot(uint8_t index);
 void enviarPendiente(uint8_t index);
 void reintentarPendientes();
+void prepararAckTerminal(uint8_t index, const String& commandId,
+                         const char* status, const char* code);
+bool intentarPersistirAck(uint8_t index);
 void limpiarPendiente(uint8_t index);
-void publicarAck(const char* actuator, const String& commandId,
+bool publicarAck(const char* actuator, const String& commandId,
                  const char* status, const char* code);
 void enviarAMega(const String& comando);
 String uartTypeFor(const char* actuator);
+bool commandIdSeguro(const String& commandId);
 String epochToISO8601(unsigned long epoch);
 uint64_t nowEpochMs();
 
@@ -112,7 +114,7 @@ void setup() {
   if (WiFi.status() == WL_CONNECTED) {
     FirebaseJson info;
     info.set("modelo", "HidroSmart Eco (Mega+ESP8266)");
-    info.set("fw", "4.1");
+    info.set("fw", "4.2");
     info.set("commandProtocol", "v2");
     info.set("ip", WiFi.localIP().toString());
     info.set("arranque", epochToISO8601(timeClient.getEpochTime()));
@@ -188,13 +190,23 @@ void parsearAckMega(const String& linea) {
   String commandId = linea.substring(p1 + 1, p2);
   String status = linea.substring(p2 + 1, p3);
   String code = linea.substring(p3 + 1);
-  commandId.trim(); status.trim(); code.trim();
+  commandId.trim();
+  status.trim();
+  code.trim();
   if (commandId.length() == 0) return;
 
   for (uint8_t i = 0; i < ACTUATOR_COUNT; i++) {
     if (pendingId[i] == commandId) {
-      publicarAck(ACTUATORS[i], commandId, status.c_str(), code.c_str());
-      limpiarPendiente(i);
+      // El ACK del Mega es más autoritativo que cualquier estado UNKNOWN que
+      // estuviera pendiente de persistir. Detenemos reintentos UART, pero el
+      // actuador sigue bloqueado hasta que RTDB confirme este ACK.
+      pendingFrame[i] = "";
+      pendingExpiresAt[i] = 0;
+      pendingAttempts[i] = MAX_UART_ATTEMPTS;
+      pendingAckStatus[i] = status;
+      pendingAckCode[i] = code;
+      pendingAckLastAttempt[i] = 0;
+      intentarPersistirAck(i);
       return;
     }
   }
@@ -231,6 +243,11 @@ void sondearComandos() {
 }
 
 void procesarSlot(uint8_t index) {
+  // Una orden por actuador permanece en vuelo hasta que su resultado terminal
+  // quede persistido. Un pointer nuevo espera; nunca sustituye ambiguamente al
+  // comando anterior.
+  if (pendingId[index].length() > 0) return;
+
   String pointerPath = String(RUTA_POINTERS) + "/" + ACTUATORS[index];
   if (!Firebase.getString(fbCmd, pointerPath)) return;
 
@@ -238,9 +255,9 @@ void procesarSlot(uint8_t index) {
   commandId.trim();
   if (commandId.length() == 0 || commandId == lastSeenId[index]) return;
 
-  if (pendingId[index].length() > 0 && pendingId[index] != commandId) {
-    publicarAck(ACTUATORS[index], pendingId[index], "REJECTED", "SUPERSEDED");
-    limpiarPendiente(index);
+  if (!commandIdSeguro(commandId)) {
+    prepararAckTerminal(index, commandId, "REJECTED", "INVALID_ID");
+    return;
   }
 
   String base = String(RUTA_COMANDOS) + "/" + ACTUATORS[index] + "/" + commandId;
@@ -249,8 +266,7 @@ void procesarSlot(uint8_t index) {
   String storedId = fbCmd.stringData();
   storedId.trim();
   if (storedId != commandId) {
-    lastSeenId[index] = commandId;
-    publicarAck(ACTUATORS[index], commandId, "REJECTED", "ID_MISMATCH");
+    prepararAckTerminal(index, commandId, "REJECTED", "ID_MISMATCH");
     return;
   }
 
@@ -269,52 +285,50 @@ void procesarSlot(uint8_t index) {
   requestedBy.trim();
 
   if (requestedBy.length() == 0 || ttlMs < 1000 || ttlMs > 15000 || issuedAt == 0) {
-    lastSeenId[index] = commandId;
-    publicarAck(ACTUATORS[index], commandId, "REJECTED", "INVALID_ENVELOPE");
+    prepararAckTerminal(index, commandId, "REJECTED", "INVALID_ENVELOPE");
     return;
   }
 
   unsigned long epoch = timeClient.getEpochTime();
   if (epoch < MIN_VALID_EPOCH) {
-    // NTP es una dependencia transitoria. No marcar el ID como visto ni emitir
-    // un rechazo final: el siguiente poll volverá a intentar mientras el TTL
-    // del comando siga vigente en RTDB.
+    // Tiempo desconocido: no ejecutar y tampoco convertir una dependencia
+    // transitoria en un rechazo definitivo.
     return;
   }
 
   uint64_t nowMs = (uint64_t)epoch * 1000ULL;
   uint64_t expiresAt = issuedAt + (uint64_t)ttlMs;
   if (nowMs > expiresAt) {
-    lastSeenId[index] = commandId;
-    publicarAck(ACTUATORS[index], commandId, "EXPIRED", "TTL_EXPIRED");
+    prepararAckTerminal(index, commandId, "EXPIRED", "TTL_EXPIRED");
     return;
   }
 
   if ((strcmp(ACTUATORS[index], "bomba") == 0 ||
        strcmp(ACTUATORS[index], "nutrientes") == 0) && !value) {
-    lastSeenId[index] = commandId;
-    publicarAck(ACTUATORS[index], commandId, "REJECTED", "INVALID_VALUE");
+    prepararAckTerminal(index, commandId, "REJECTED", "INVALID_VALUE");
     return;
   }
 
   String type = uartTypeFor(ACTUATORS[index]);
   if (type.length() == 0) {
-    lastSeenId[index] = commandId;
-    publicarAck(ACTUATORS[index], commandId, "REJECTED", "UNKNOWN_ACTUATOR");
+    prepararAckTerminal(index, commandId, "REJECTED", "UNKNOWN_ACTUATOR");
     return;
   }
 
-  lastSeenId[index] = commandId;
   pendingId[index] = commandId;
   pendingFrame[index] = "CMD|" + commandId + "|" + type + "|" + (value ? "1" : "0");
   pendingExpiresAt[index] = expiresAt;
   pendingAttempts[index] = 0;
   pendingLastSend[index] = 0;
+  pendingAckStatus[index] = "";
+  pendingAckCode[index] = "";
+  pendingAckLastAttempt[index] = 0;
   enviarPendiente(index);
 }
 
 void enviarPendiente(uint8_t index) {
   if (pendingId[index].length() == 0) return;
+  if (pendingAckStatus[index].length() > 0) return;
   if (pendingAttempts[index] >= MAX_UART_ATTEMPTS) return;
 
   enviarAMega(pendingFrame[index]);
@@ -325,22 +339,34 @@ void enviarPendiente(uint8_t index) {
 void reintentarPendientes() {
   if (WiFi.status() != WL_CONNECTED) return;
 
+  timeClient.update();
   uint64_t nowMs = nowEpochMs();
   unsigned long t = millis();
 
   for (uint8_t i = 0; i < ACTUATOR_COUNT; i++) {
     if (pendingId[i].length() == 0) continue;
 
+    // Si ya existe un resultado terminal conocido, no volver a tocar UART.
+    // Solo insistir en persistir el ACK en RTDB.
+    if (pendingAckStatus[i].length() > 0) {
+      if (pendingAckLastAttempt[i] == 0 ||
+          t - pendingAckLastAttempt[i] >= ACK_RETRY_MS) {
+        intentarPersistirAck(i);
+      }
+      continue;
+    }
+
+    // Una vez enviado al menos una vez ya no podemos afirmar que una ausencia
+    // de ACK signifique "no aplicado". Si expira esperando ACK, el resultado es
+    // UNKNOWN y la idempotencia del Mega protege los reintentos del mismo ID.
     if (nowMs > 0 && nowMs > pendingExpiresAt[i]) {
-      publicarAck(ACTUATORS[i], pendingId[i], "EXPIRED", "TTL_EXPIRED_WAITING_ACK");
-      limpiarPendiente(i);
+      prepararAckTerminal(i, pendingId[i], "UNKNOWN", "TTL_EXPIRED_WAITING_ACK");
       continue;
     }
 
     if (pendingAttempts[i] >= MAX_UART_ATTEMPTS) {
       if (t - pendingLastSend[i] >= UART_RETRY_MS) {
-        publicarAck(ACTUATORS[i], pendingId[i], "REJECTED", "MEGA_NO_ACK");
-        limpiarPendiente(i);
+        prepararAckTerminal(i, pendingId[i], "UNKNOWN", "MEGA_NO_ACK");
       }
       continue;
     }
@@ -351,24 +377,63 @@ void reintentarPendientes() {
   }
 }
 
+void prepararAckTerminal(uint8_t index, const String& commandId,
+                         const char* status, const char* code) {
+  pendingId[index] = commandId;
+  pendingFrame[index] = "";
+  pendingExpiresAt[index] = 0;
+  pendingAttempts[index] = MAX_UART_ATTEMPTS;
+  pendingLastSend[index] = 0;
+  pendingAckStatus[index] = status;
+  pendingAckCode[index] = code;
+  pendingAckLastAttempt[index] = 0;
+  intentarPersistirAck(index);
+}
+
+bool intentarPersistirAck(uint8_t index) {
+  if (pendingId[index].length() == 0 || pendingAckStatus[index].length() == 0) {
+    return false;
+  }
+
+  pendingAckLastAttempt[index] = millis();
+  if (!publicarAck(
+        ACTUATORS[index],
+        pendingId[index],
+        pendingAckStatus[index].c_str(),
+        pendingAckCode[index].c_str())) {
+    return false;
+  }
+
+  lastSeenId[index] = pendingId[index];
+  limpiarPendiente(index);
+  return true;
+}
+
 void limpiarPendiente(uint8_t index) {
   pendingId[index] = "";
   pendingFrame[index] = "";
+  pendingAckStatus[index] = "";
+  pendingAckCode[index] = "";
   pendingExpiresAt[index] = 0;
   pendingAttempts[index] = 0;
   pendingLastSend[index] = 0;
+  pendingAckLastAttempt[index] = 0;
 }
 
-void publicarAck(const char* actuator, const String& commandId,
+bool publicarAck(const char* actuator, const String& commandId,
                  const char* status, const char* code) {
-  if (WiFi.status() != WL_CONNECTED) return;
+  if (WiFi.status() != WL_CONNECTED) return false;
+
+  uint64_t atMs = nowEpochMs();
+  if (atMs == 0) return false;
 
   FirebaseJson ack;
   ack.set("commandId", commandId);
   ack.set("status", status);
   ack.set("code", code);
-  ack.set("at", (double)nowEpochMs());
-  Firebase.setJSON(
+  ack.set("at", (double)atMs);
+
+  return Firebase.setJSON(
     fbData,
     String(RUTA_ACKS) + "/" + actuator + "/" + commandId,
     ack
@@ -381,6 +446,19 @@ String uartTypeFor(const char* actuator) {
   if (strcmp(actuator, "bomba") == 0) return "PUMP_PULSE";
   if (strcmp(actuator, "nutrientes") == 0) return "NUTRIENTS_PULSE";
   return "";
+}
+
+bool commandIdSeguro(const String& commandId) {
+  if (commandId.length() < 8 || commandId.length() > 23) return false;
+  for (uint16_t i = 0; i < commandId.length(); i++) {
+    char c = commandId[i];
+    bool ok = (c >= 'A' && c <= 'Z') ||
+              (c >= 'a' && c <= 'z') ||
+              (c >= '0' && c <= '9') ||
+              c == '_' || c == '-';
+    if (!ok) return false;
+  }
+  return true;
 }
 
 void enviarAMega(const String& comando) {
