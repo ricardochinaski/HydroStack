@@ -11,9 +11,11 @@ flowchart TD
     DEVICES["Firestore devices/{deviceId}"]
     USERDATA["Firestore usuarios/{uid}"]
     ACCESS["RTDB deviceAccess/{uid}/{deviceId}"]
-    RTDB["RTDB dispositivos/{deviceId}"]
+    COMMANDS["RTDB comandos + commandPointers"]
+    ACKS["RTDB commandAcks"]
+    TELEMETRY["RTDB telemetria"]
     STORAGE["Firebase Storage"]
-    GW["ESP8266 gateway"]
+    GW["ESP8266 gateway v4.1"]
     MEGA["Arduino Mega 2560"]
     IO["DHT22, entrada pH simulada, TFT y 4 relés"]
     CAM["ESP32-CAM"]
@@ -26,14 +28,20 @@ flowchart TD
     APP <--> USERDATA
     APP -->|"DeviceService valida ownerUid"| DEVICES
     DEVICES -.->|"proyección confiable futura"| ACCESS
-    ACCESS -->|"Security Rules"| RTDB
-    APP <--> RTDB
-    RTDB <--> GW
-    GW <-->|"UART 9600 baud"| MEGA
+    ACCESS -->|"Security Rules"| COMMANDS
+    APP -->|"commandId + issuedAt + TTL"| COMMANDS
+    COMMANDS --> GW
+    GW -->|"CMD commandId type value"| MEGA
+    MEGA -->|"ACK commandId status code"| GW
+    GW --> ACKS
+    ACKS --> APP
+    MEGA -->|"CSV telemetría"| GW
+    GW --> TELEMETRY
+    TELEMETRY --> APP
     MEGA <--> IO
     CAM --> LOCAL
     CAM --> STORAGE
-    CAM --> RTDB
+    CAM --> TELEMETRY
     SIM --> APP
     WOKWI -.->|"simulación independiente"| APP
 ```
@@ -51,6 +59,8 @@ La selección de datos funciona así:
 - `usarHardware = true` y `useDevelopmentDevice = true`: se usa un ID manual de laboratorio. Este modo está explícitamente separado y no crea ownership.
 
 Un `preferredDeviceId` guardado localmente es únicamente un selector. No es autoridad de seguridad.
+
+Para hardware real, `RTDBService` ya no escribe booleanos momentáneos. Crea un registro inmutable con `commandId`, timestamp servidor, TTL y UID solicitante, y después mueve el `commandPointer` del actuador.
 
 ## Dominio de dispositivo
 
@@ -72,23 +82,66 @@ Un `preferredDeviceId` guardado localmente es únicamente un selector. No es aut
 
 La creación/claim de un dispositivo está intencionalmente fuera del cliente en esta fase.
 
+## Contrato de comandos
+
+El protocolo v2 está documentado en `docs/commands.md`.
+
+Por cada actuador:
+
+```text
+comandos/{actuator}/{commandId}
+commandPointers/{actuator} -> commandId
+commandAcks/{actuator}/{commandId}
+```
+
+Los comandos son inmutables y tienen TTL. El puntero solo puede referenciar un comando existente del usuario autorizado.
+
 ## Nodo de control local
 
-El Arduino Mega 2560 es el nodo que lee los sensores confirmados, actualiza la pantalla TFT y acciona los cuatro relés. Envía una trama CSV cada dos segundos por `Serial1` y recibe comandos de texto del gateway. Los pulsos de bomba y nutrientes duran cinco segundos; luz y auxiliar mantienen estado.
+El Arduino Mega 2560 continúa concentrando sensores, TFT y cuatro relés. La telemetría hacia el ESP8266 conserva el CSV anterior cada dos segundos para evitar mezclar esta fase con una migración general del transporte.
 
-No se modificó firmware ni UART en esta fase.
+La recepción de comandos sí usa UART v2:
+
+```text
+CMD|<commandId>|<type>|<0|1>
+```
+
+El Mega responde:
+
+```text
+ACK|<commandId>|<status>|<code>
+```
+
+Para bomba y nutrientes:
+
+- duración física fija local: 5 s;
+- cooldown local: 10 s;
+- guard de boot para pulsos nuevos: 10 s;
+- último `commandId` aplicado persistido en EEPROM antes de energizar el relé;
+- un reintento con el mismo ID responde `DUPLICATE` sin repetir el pulso;
+- comandos UART legacy están deshabilitados por defecto.
+
+La lógica ADC/pH se conserva sin corregir porque pertenece a otra fase.
 
 ## Gateway de Internet
 
-El ESP8266 no contiene sensores ni pantalla en la versión activa. Su función es conectar la instalación a WiFi y Firebase RTDB:
+El ESP8266 sigue siendo el puente entre WiFi/Firebase y el Mega.
 
-- recibe la trama CSV del Mega por UART;
+En v4.1:
+
+- recibe telemetría CSV del Mega;
 - publica telemetría cada diez segundos;
-- sondea comandos cada tres segundos;
-- reenvía comandos al Mega;
-- publica información de arranque del dispositivo.
+- consulta `commandPointers` aproximadamente cada segundo;
+- carga el comando inmutable referenciado;
+- valida ID, sobre y TTL;
+- usa UTC/NTP para verificar vigencia;
+- reenvía el mismo `commandId` como máximo tres veces por UART;
+- publica el ACK recibido desde el Mega;
+- no inicializa ni resetea comandos al arrancar.
 
-El firmware continúa usando `DEVICE_ID "HS-001"` y autenticación legacy; ambos quedan pendientes de fases posteriores. El nuevo contrato Flutter evita considerar `HS-001` un dispositivo real autorizado por defecto.
+Si NTP todavía no está sincronizado, el gateway no consume definitivamente la orden: vuelve a evaluarla en un poll posterior.
+
+El firmware continúa usando `DEVICE_ID "HS-001"` y autenticación Firebase legacy. La identidad/autenticación IoT real queda como siguiente barrera de seguridad.
 
 ## Nodo de cámara
 
@@ -110,10 +163,12 @@ Los campos `deviceId` del perfil y `esp32Id`/`esp32Connected` se conservan tempo
 ### Realtime Database
 
 - `deviceAccess/{uid}/{deviceId}`: proyección de autorización mantenida por infraestructura confiable futura; clientes no escriben.
-- `dispositivos/{deviceId}/telemetria`: firmware ESP8266 escribe; app lee si está autorizada.
-- `dispositivos/{deviceId}/info`: firmware ESP8266 escribe al arrancar.
-- `dispositivos/{deviceId}/comandos`: app autorizada escribe; gateway lee.
-- `dispositivos/{deviceId}/camara`: ESP32-CAM publica metadatos.
+- `dispositivos/{deviceId}/telemetria`: gateway escribe; app lee si está autorizada.
+- `dispositivos/{deviceId}/info`: gateway publica metadatos de arranque.
+- `dispositivos/{deviceId}/comandos/{actuator}/{commandId}`: orden inmutable creada por app autorizada.
+- `dispositivos/{deviceId}/commandPointers/{actuator}`: selección de la orden vigente.
+- `dispositivos/{deviceId}/commandAcks/{actuator}/{commandId}`: resultado publicado por gateway tras respuesta del Mega.
+- `dispositivos/{deviceId}/camara`: ESP32-CAM publica metadatos legacy.
 
 ### Storage
 
