@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function ownsDevice(deviceId) {
+      return signedIn()
+        && deviceId is string
+        && exists(/databases/$(database)/documents/devices/$(deviceId))
+        && get(/databases/$(database)/documents/devices/$(deviceId)).data.ownerUid == request.auth.uid;
+    }
+
+    function validProfileDeviceOnCreate() {
+      return !request.resource.data.keys().hasAny(['deviceId'])
+        || ownsDevice(request.resource.data.deviceId);
+    }
+
+    function validProfileDeviceOnUpdate() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['deviceId'])
+        || ownsDevice(request.resource.data.deviceId);
+    }
+
+    match /usuarios/{uid} {
+      allow read: if isSelf(uid);
+      allow create: if isSelf(uid) && validProfileDeviceOnCreate();
+      allow update: if isSelf(uid) && validProfileDeviceOnUpdate();
+      allow delete: if isSelf(uid);
+
+      // Existing per-user app data remains private to the authenticated owner.
+      match /{document=**} {
+        allow read, write: if isSelf(uid);
+      }
+    }
+
+    match /devices/{deviceId} {
+      // Queries must constrain ownerUid to request.auth.uid or Firestore will
+      // reject the query because rules are not filters.
+      allow read: if signedIn() && resource.data.ownerUid == request.auth.uid;
+
+      // Claim/creation is intentionally denied to untrusted clients until a
+      // trusted provisioning backend or equivalent proof-of-possession exists.
+      allow create: if false;
+
+      // Clients may only rename a device they already own. Identity, owner,
+      // status and claim timestamps are controlled by trusted infrastructure.
+      allow update: if signedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.deviceId == resource.data.deviceId
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['alias', 'updatedAt']);
+
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
