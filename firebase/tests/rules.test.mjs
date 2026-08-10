@@ -48,6 +48,12 @@ beforeEach(async () => {
       createdAt: new Date('2026-08-10T00:00:00Z'),
       claimedAt: new Date('2026-08-10T00:00:00Z'),
     });
+    await firestore.doc('devices/BAD-PATH').set({
+      deviceId: 'OTHER-ID',
+      ownerUid: 'user-a',
+      alias: 'Inconsistente',
+      status: 'offline',
+    });
 
     await database.ref('deviceAccess/user-a/DEV-A').set(true);
     await database.ref('deviceAccess/user-b/DEV-B').set(true);
@@ -141,4 +147,18 @@ test('cliente no puede escribir comandos fuera del contrato', async () => {
 test('cliente no puede borrar un campo de comando', async () => {
   const db = testEnv.authenticatedContext('user-a').database();
   await assertFails(db.ref('dispositivos/DEV-A/comandos/bomba').remove());
+});
+
+test('documento con deviceId interno distinto de la ruta no es autorizable', async () => {
+  const db = testEnv.authenticatedContext('user-a').firestore();
+  await assertFails(db.doc('devices/BAD-PATH').get());
+});
+
+test('owner puede cambiar alias pero no status', async () => {
+  const db = testEnv.authenticatedContext('user-a').firestore();
+  await assertSucceeds(db.doc('devices/DEV-A').update({
+    alias: 'Torre cocina',
+    updatedAt: new Date('2026-08-10T01:00:00Z'),
+  }));
+  await assertFails(db.doc('devices/DEV-A').update({ status: 'online' }));
 });
