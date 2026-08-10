@@ -4,10 +4,10 @@
  *
  * Responsabilidades:
  *  1. Recibe telemetría CSV del Mega por UART y la publica en Firebase.
- *  2. Lee sobres de comando RTDB con commandId + timestamp + TTL.
- *  3. Reenvía cada comando al Mega incluyendo commandId.
- *  4. Reintenta de forma acotada mientras no exista ACK.
- *  5. Publica el ACK real recibido desde el Mega.
+ *  2. Lee commandPointers por actuador y carga el comando inmutable asociado.
+ *  3. Valida timestamp + TTL antes de reenviar al Mega.
+ *  4. Reenvía cada comando incluyendo commandId y reintenta de forma acotada.
+ *  5. Publica el ACK real recibido desde el Mega, indexado por commandId.
  *
  * UART 9600 baud:
  *  Mega → ESP8266 telemetría:
@@ -18,9 +18,10 @@
  *    "ACK|<commandId>|<status>|<code>\n"
  *
  * RTDB:
- *  /dispositivos/{DEVICE_ID}/comandos/{actuator}
+ *  /dispositivos/{DEVICE_ID}/comandos/{actuator}/{commandId}
  *    commandId, value, issuedAt, ttlMs, requestedBy
- *  /dispositivos/{DEVICE_ID}/commandAcks/{actuator}
+ *  /dispositivos/{DEVICE_ID}/commandPointers/{actuator} = commandId
+ *  /dispositivos/{DEVICE_ID}/commandAcks/{actuator}/{commandId}
  *    commandId, status, code, at
  *
  * La autenticación IoT sigue siendo legacy en esta fase y se migrará aparte.
@@ -42,6 +43,7 @@
 #define RUTA_TELEMETRIA "/dispositivos/" DEVICE_ID "/telemetria"
 #define RUTA_INFO       "/dispositivos/" DEVICE_ID "/info"
 #define RUTA_COMANDOS   "/dispositivos/" DEVICE_ID "/comandos"
+#define RUTA_POINTERS   "/dispositivos/" DEVICE_ID "/commandPointers"
 #define RUTA_ACKS       "/dispositivos/" DEVICE_ID "/commandAcks"
 
 // ── OBJETOS ──────────────────────────────────────────────────────
@@ -125,8 +127,8 @@ void setup() {
     Firebase.setJSON(fbData, RUTA_INFO, info);
   }
 
-  // No inicializar /comandos desde firmware. Un arranque del gateway no debe
-  // sobrescribir una solicitud válida escrita por la app.
+  // No inicializar ni borrar comandos desde firmware. Un reinicio del gateway
+  // nunca debe sobrescribir una orden válida de la app.
 }
 
 // =================================================================
@@ -233,10 +235,9 @@ void publicarTelemetria() {
   json.set("relay_auxiliar", gAux);
   json.set("timestamp", epochToISO8601(timeClient.getEpochTime()));
 
-  if (!Firebase.setJSON(fbData, RUTA_TELEMETRIA, json)) {
-    Serial.print(F("[Firebase] Error telemetria: "));
-    Serial.println(fbData.errorReason());
-  }
+  // No imprimir errores por Serial: después de Serial.swap(), este puerto es el
+  // canal UART hacia el Mega y cualquier log podría parecer una trama de control.
+  Firebase.setJSON(fbData, RUTA_TELEMETRIA, json);
 }
 
 // =================================================================
@@ -250,18 +251,27 @@ void sondearComandos() {
 }
 
 void procesarSlot(uint8_t index) {
-  String base = String(RUTA_COMANDOS) + "/" + ACTUATORS[index];
+  String pointerPath = String(RUTA_POINTERS) + "/" + ACTUATORS[index];
+  if (!Firebase.getString(fbCmd, pointerPath)) return;
 
-  if (!Firebase.getString(fbCmd, base + "/commandId")) return;
   String commandId = fbCmd.stringData();
   commandId.trim();
   if (commandId.length() == 0 || commandId == lastSeenId[index]) return;
 
-  // Si aparece una orden más nueva para el mismo actuador, la anterior deja de
-  // ser reenviable. Preferimos perder una orden antigua antes que ejecutar dos.
   if (pendingId[index].length() > 0 && pendingId[index] != commandId) {
     publicarAck(ACTUATORS[index], pendingId[index], "REJECTED", "SUPERSEDED");
     limpiarPendiente(index);
+  }
+
+  String base = String(RUTA_COMANDOS) + "/" + ACTUATORS[index] + "/" + commandId;
+
+  if (!Firebase.getString(fbCmd, base + "/commandId")) return;
+  String storedId = fbCmd.stringData();
+  storedId.trim();
+  if (storedId != commandId) {
+    lastSeenId[index] = commandId;
+    publicarAck(ACTUATORS[index], commandId, "REJECTED", "ID_MISMATCH");
+    return;
   }
 
   bool value;
@@ -373,7 +383,11 @@ void publicarAck(const char* actuator, const String& commandId,
   ack.set("status", status);
   ack.set("code", code);
   ack.set("at", (double)nowEpochMs());
-  Firebase.setJSON(fbData, String(RUTA_ACKS) + "/" + actuator, ack);
+  Firebase.setJSON(
+    fbData,
+    String(RUTA_ACKS) + "/" + actuator + "/" + commandId,
+    ack
+  );
 }
 
 String uartTypeFor(const char* actuator) {
