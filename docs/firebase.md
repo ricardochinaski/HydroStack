@@ -1,6 +1,6 @@
 # Estado actual de Firebase
 
-Este documento describe el contrato Firebase vigente en HydroStack después de introducir la base de identidad y ownership de dispositivos. No cambia todavía el proyecto Firebase, la autenticación del firmware ni el provisioning físico.
+Este documento describe el contrato Firebase vigente en HydroStack después de introducir la base de identidad/ownership y el protocolo seguro de comandos v2. No cambia todavía el proyecto Firebase, la autenticación del firmware ni el provisioning físico.
 
 ## Inicialización
 
@@ -17,7 +17,7 @@ Uso confirmado en `apps/mobile/lib/services/firebase_auth_service.dart`:
 - Google Sign-In;
 - lectura del usuario actual y cambios de sesión.
 
-El UID autenticado es la identidad de usuario usada por el contrato de ownership.
+El UID autenticado es la identidad de usuario usada por el contrato de ownership y queda registrado como `requestedBy` en los comandos v2.
 
 ## Fuente de verdad del ownership
 
@@ -71,28 +71,76 @@ El claim seguro queda bloqueado hasta incorporar infraestructura confiable de pr
 
 ## Realtime Database
 
-Se mantienen las rutas de firmware existentes:
+### Rutas generales
 
-| Ruta | Escritor | Lector / uso |
-| --- | --- | --- |
-| `dispositivos/{deviceId}/telemetria` | ESP8266 | app Flutter |
-| `dispositivos/{deviceId}/info` | ESP8266 | estado de arranque |
-| `dispositivos/{deviceId}/comandos` | app Flutter | ESP8266 |
-| `dispositivos/{deviceId}/camara` | ESP32-CAM | metadatos de cámara |
+| Ruta | Uso |
+| --- | --- |
+| `deviceAccess/{uid}/{deviceId}` | proyección de autorización para Security Rules |
+| `dispositivos/{deviceId}/telemetria` | telemetría publicada por gateway |
+| `dispositivos/{deviceId}/info` | metadatos de arranque del gateway |
+| `dispositivos/{deviceId}/comandos` | registros inmutables de comandos v2 |
+| `dispositivos/{deviceId}/commandPointers` | ID vigente por actuador |
+| `dispositivos/{deviceId}/commandAcks` | resultado correlacionado por commandId |
+| `dispositivos/{deviceId}/camara` | metadatos legacy de cámara |
 
-Se agrega una proyección de autorización:
+### Proyección de autorización
 
 `deviceAccess/{uid}/{deviceId}: true`
 
-Esta proyección existe porque las reglas de RTDB no usan directamente Firestore como fuente de autorización. Debe ser creada y eliminada únicamente por infraestructura confiable cuando cambie el ownership; el cliente no puede escribirla.
+Esta proyección existe porque el enforcement de RTDB usa datos disponibles en RTDB. Debe ser creada y eliminada únicamente por infraestructura confiable cuando cambie el ownership; el cliente no puede escribirla.
 
 **Fuente de verdad:** Firestore `devices/{deviceId}.ownerUid`.
 
 **Proyección derivada para enforcement RTDB:** `deviceAccess/{uid}/{deviceId}`.
 
-`firebase/database.rules.json` exige la proyección para leer un dispositivo o escribir comandos. Conocer solo `deviceId` no concede acceso.
+Conocer únicamente un `deviceId` no concede acceso.
 
-El modo manual de desarrollo de Flutter tampoco evita estas reglas; únicamente cambia qué ID intenta usar el cliente.
+### Comandos v2
+
+Cada comando se crea como registro inmutable:
+
+```text
+/dispositivos/{deviceId}/comandos/{actuator}/{commandId}
+```
+
+con:
+
+```text
+commandId
+value
+issuedAt
+ttlMs
+requestedBy
+```
+
+`issuedAt` se escribe desde Flutter con `ServerValue.timestamp`. Las reglas exigen una marca temporal cercana a `now`, el reloj del servidor RTDB, y un TTL entre 1 y 15 segundos.
+
+Actuadores permitidos:
+
+- `luz`;
+- `auxiliar`;
+- `bomba`;
+- `nutrientes`.
+
+Los registros de comando son create-only para clientes. No pueden editarse ni borrarse después de crearse.
+
+El ID que debe procesar el gateway se publica en:
+
+```text
+/dispositivos/{deviceId}/commandPointers/{actuator}
+```
+
+El puntero solo puede referenciar un comando existente del mismo actuador cuya `requestedBy` coincida con el UID autenticado.
+
+El resultado se publica en:
+
+```text
+/dispositivos/{deviceId}/commandAcks/{actuator}/{commandId}
+```
+
+Los clientes pueden leer esos ACK a través del acceso autorizado del dispositivo, pero no escribirlos.
+
+El contrato completo, estados y framing UART están en `docs/commands.md`.
 
 ## Firebase Storage
 
@@ -114,15 +162,18 @@ Archivos versionados:
 - `firebase/firebase.json`
 - `firebase/tests/rules.test.mjs`
 
-Los tests cubren aislamiento entre usuario A/B, escritura de comandos, acceso no autenticado, prevención de self-claim y mutación de `ownerUid`.
+La suite cubre ownership, aislamiento A/B y además el protocolo v2: creación de comandos, inmutabilidad, timestamps, TTL, identidad `requestedBy`, commandId, punteros y prohibición de ACK cliente.
+
+Los tests deben ejecutarse en Firebase Emulator Suite antes de integrar la rama. En el entorno de edición actual no están disponibles Firebase CLI ni las dependencias instalables, por lo que no se declara un resultado de ejecución.
 
 ## Riesgos todavía abiertos
 
 - no existe todavía backend/función confiable de claim;
 - no existe sincronizador confiable Firestore → `deviceAccess`;
-- el firmware sigue usando la estrategia legacy de autenticación;
+- el firmware sigue usando autenticación Firebase legacy y una credencial global conceptual;
 - `HS-001` continúa compilado en firmware y solo se conserva en Flutter como ID manual de desarrollo;
-- el protocolo de comandos no tiene `commandId`, TTL ni ACK;
+- falta autenticación IoT por dispositivo y revocación individual;
 - falta separación estricta dev/staging/prod;
 - la cámara debe migrar de `capturas/` al contrato seguro por dispositivo;
-- la discrepancia histórica Android/Firebase debe resolverse antes de release.
+- la discrepancia histórica Android/Firebase debe resolverse antes de release;
+- los registros históricos de comandos y ACK aún no tienen política de retención/limpieza.
