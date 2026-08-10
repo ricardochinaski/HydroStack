@@ -5,6 +5,7 @@ import '../models/lectura_sensor.dart';
 import '../models/alerta.dart';
 import '../models/cosecha.dart';
 import '../models/planta.dart';
+import 'device_service.dart';
 import 'firestore_service.dart';
 
 /// Implementación real de Firestore para los DATOS DE USUARIO
@@ -39,12 +40,22 @@ class FirebaseFirestoreService implements FirestoreService {
     await _usuarios.doc(uid).set({'mode': mode}, SetOptions(merge: true));
   }
 
+  /// Compatibilidad legacy: mantiene `usuarios/{uid}.deviceId`, pero ya no
+  /// acepta un ID arbitrario. Antes de escribirlo verifica ownership contra la
+  /// fuente canónica `devices/{deviceId}.ownerUid`.
   @override
   Future<void> saveDeviceId(String deviceId) async {
     final uid = _uid;
     if (uid == null) return;
+
+    final device = await FirebaseDeviceService(firestore: _db)
+        .getOwnedDevice(uid, deviceId.trim());
+    if (device == null) {
+      throw StateError('No se puede guardar un dispositivo sin ownership verificado.');
+    }
+
     await _usuarios.doc(uid).set({
-      'deviceId': deviceId,
+      'deviceId': device.deviceId,
       'deviceVinculadoEn': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
@@ -60,6 +71,8 @@ class FirebaseFirestoreService implements FirestoreService {
       id: doc.id,
       nombre: data['nombre'] as String? ?? 'Mi Huerta Viva',
       capacidadMaxima: (data['capacidadMaxima'] as num?)?.toInt() ?? 24,
+      // LEGACY: estos dos campos se conservan para compatibilidad visual.
+      // El control real se autoriza mediante HydroStackDevice/DeviceService.
       esp32Connected: data['esp32Connected'] as bool? ?? false,
       esp32Id: data['esp32Id'] as String?,
       plantas: ((data['plantas'] as List<dynamic>?) ?? []).map((e) {
@@ -81,6 +94,7 @@ class FirebaseFirestoreService implements FirestoreService {
     await _usuarios.doc(uid).collection('huerta').doc('config').set({
       'nombre': huerta.nombre,
       'capacidadMaxima': huerta.capacidadMaxima,
+      // LEGACY: no son fuente de verdad de ownership.
       'esp32Connected': huerta.esp32Connected,
       'esp32Id': huerta.esp32Id,
       'plantas': huerta.plantas.map((p) => {
