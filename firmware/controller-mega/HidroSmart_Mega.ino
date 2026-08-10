@@ -23,6 +23,8 @@
  * Seguridad local:
  *  - bomba/nutrientes no aceptan duración remota: PULSO_MS sigue siendo local;
  *  - existe cooldown local entre pulsos;
+ *  - durante los primeros segundos después de boot no se aceptan pulsos nuevos,
+ *    evitando que un reinicio borre de facto el cooldown;
  *  - el último commandId aplicado a cada actuador de pulso queda persistido en
  *    EEPROM ANTES de energizar el relé, evitando repetir el mismo pulso tras
  *    reinicios del gateway o del Mega;
@@ -37,7 +39,6 @@
 #include <DHT.h>
 #include <EEPROM.h>
 
-// ── PINES ────────────────────────────────────────────────────────
 #define PIN_DHT     2
 #define PIN_PH      A0
 
@@ -52,11 +53,9 @@
 
 #define ENABLE_LEGACY_UART_COMMANDS 0
 
-// ── OBJETOS ──────────────────────────────────────────────────────
 Adafruit_ILI9341 tft(TFT_CS, TFT_DC, TFT_RST);
 DHT              dht(PIN_DHT, DHT22);
 
-// ── PALETA MODERNA (RGB565) ───────────────────────────────────────
 #define C_BG       0x0882
 #define C_CARD     0x10C4
 #define C_BORDE    0x31A7
@@ -70,7 +69,6 @@ DHT              dht(PIN_DHT, DHT22);
 #define C_TEXTO    0xE77E
 #define C_GRIS     0x8CB3
 
-// ── LAYOUT (320×240 landscape) ────────────────────────────────────
 #define PHC_Y   28
 #define PHC_H   92
 #define BAR_X   24
@@ -92,18 +90,15 @@ DHT              dht(PIN_DHT, DHT22);
 const float PH_VIS_MIN = 4.0f;
 const float PH_VIS_MAX = 10.0f;
 
-// ── FILTRO PROMEDIO MÓVIL pH ──────────────────────────────────────
 static const uint8_t VENTANA = 10;
 int     bufPH[VENTANA];
 uint8_t idxPH   = 0;
 long    sumaBuf = 0;
 
-// ── CALIBRACIÓN POTENCIÓMETRO → pH ───────────────────────────────
 // Conservada sin cambios: la corrección ADC se hará en una fase posterior.
 const float V_MIN = 0.084f;
 const float V_MAX = 3.030f;
 
-// ── TELEMETRÍA / ESTADO ───────────────────────────────────────────
 float gPH   = 7.0f;
 float gTemp = 0.0f;
 float gHum  = 0.0f;
@@ -123,17 +118,17 @@ int   prevEstado = -1;
 int   prevKnobX  = -1;
 bool  prevBomba = false, prevNut = false, prevLuz = false, prevAux = false;
 
-// ── SEGURIDAD LOCAL DE PULSOS ─────────────────────────────────────
 const unsigned long T_SENSOR = 2000UL;
 const unsigned long PULSO_MS = 5000UL;
 const unsigned long MIN_PULSE_GAP_MS = 10000UL;
+const unsigned long BOOT_PULSE_GUARD_MS = 10000UL;
 unsigned long tSensor = 0;
 unsigned long lastPumpStart = 0;
 unsigned long lastNutrientsStart = 0;
 bool pumpHasRun = false;
 bool nutrientsHasRun = false;
 
-static const uint32_t JOURNAL_MAGIC = 0x48534332UL; // "HSC2"
+static const uint32_t JOURNAL_MAGIC = 0x48534332UL;
 static const int EEPROM_JOURNAL_ADDR = 0;
 static const uint8_t MAX_COMMAND_ID_LEN = 23;
 
@@ -146,12 +141,8 @@ struct PulseJournal {
 PulseJournal pulseJournal;
 String lastLightCommandId = "";
 String lastAuxCommandId = "";
-
-// ── BUFFER UART ───────────────────────────────────────────────────
 String uartBuf = "";
 
-// =================================================================
-// PROTOTIPOS
 void leerSensores();
 void initBufferPH();
 void actualizarDisplay();
@@ -183,7 +174,6 @@ uint16_t colorEstado(int estado);
 uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b);
 uint16_t colorSuavePH(float ph);
 
-// =================================================================
 void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
@@ -227,7 +217,6 @@ void setup() {
   dibujarTiraReles();
 }
 
-// =================================================================
 void loop() {
   unsigned long t = millis();
 
@@ -242,7 +231,6 @@ void loop() {
   actualizarPulsos();
 }
 
-// =================================================================
 void cargarJournal() {
   EEPROM.get(EEPROM_JOURNAL_ADDR, pulseJournal);
   if (pulseJournal.magic != JOURNAL_MAGIC) {
@@ -267,17 +255,15 @@ bool esPulseDuplicado(bool bomba, const String& commandId) {
   const char* stored = bomba
       ? pulseJournal.pumpCommandId
       : pulseJournal.nutrientsCommandId;
-  return commandId.equals(stored);
+  return commandId == stored;
 }
 
-// =================================================================
 void initBufferPH() {
   int primera = analogRead(PIN_PH);
   sumaBuf = (long)primera * VENTANA;
   for (uint8_t i = 0; i < VENTANA; i++) bufPH[i] = primera;
 }
 
-// =================================================================
 void leerSensores() {
   int cruda = analogRead(PIN_PH);
   sumaBuf = sumaBuf - bufPH[idxPH] + cruda;
@@ -295,7 +281,6 @@ void leerSensores() {
   if (dhtOK) { gTemp = t; gHum = h; }
 }
 
-// =================================================================
 void actualizarPulsos() {
   unsigned long t = millis();
   if (gBomba && (long)(t - tFinBomba) >= 0) {
@@ -311,7 +296,6 @@ void actualizarPulsos() {
   }
 }
 
-// =================================================================
 void escucharComandos() {
   while (Serial1.available()) {
     char c = (char)Serial1.read();
@@ -361,6 +345,10 @@ void aplicarComandoV2(const String& frame) {
       enviarAck(commandId, "DUPLICATE", "ALREADY_APPLIED");
       return;
     }
+    if (t < BOOT_PULSE_GUARD_MS) {
+      enviarAck(commandId, "REJECTED", "BOOT_GUARD");
+      return;
+    }
     if (gBomba) {
       enviarAck(commandId, "REJECTED", "ALREADY_ACTIVE");
       return;
@@ -370,8 +358,6 @@ void aplicarComandoV2(const String& frame) {
       return;
     }
 
-    // Persistir primero: si hay un reset inmediatamente después, este ID no
-    // podrá volver a energizar el relé.
     persistirPulseId(true, commandId);
     pumpHasRun = true;
     lastPumpStart = t;
@@ -387,6 +373,10 @@ void aplicarComandoV2(const String& frame) {
     }
     if (esPulseDuplicado(false, commandId)) {
       enviarAck(commandId, "DUPLICATE", "ALREADY_APPLIED");
+      return;
+    }
+    if (t < BOOT_PULSE_GUARD_MS) {
+      enviarAck(commandId, "REJECTED", "BOOT_GUARD");
       return;
     }
     if (gNutrientes) {
@@ -483,7 +473,6 @@ void aplicarComandoLegacy(const String& cmd) {
   dibujarTiraReles();
 }
 
-// =================================================================
 void enviarTelemetria() {
   char buf[64];
   snprintf(buf, sizeof(buf), "%.1f,%.1f,%.2f,%d,%d,%d,%d",
@@ -494,7 +483,6 @@ void enviarTelemetria() {
   Serial.print(F("[MEGA→ESP] ")); Serial.println(buf);
 }
 
-// =================================================================
 void actualizarDisplay() {
   if (fabs(gPH - prevPH) >= 0.005f) {
     dibujarValorPH();
@@ -514,9 +502,6 @@ void actualizarDisplay() {
   prevDhtOK = dhtOK;
 }
 
-// =================================================================
-// ESTRUCTURA FIJA
-// =================================================================
 void dibujarUIEstatica() {
   tft.fillCircle(14, 13, 6, C_VERDE);
   tft.fillCircle(14, 13, 2, C_BG);
@@ -562,7 +547,6 @@ void dibujarUIEstatica() {
   tft.print("HUMEDAD");
 }
 
-// =================================================================
 void dibujarValorPH() {
   char buf[8];
   dtostrf(gPH, 4, 2, buf);
@@ -570,7 +554,6 @@ void dibujarValorPH() {
   while (*val == ' ') val++;
 
   uint16_t col = colorEstado(estadoPH(gPH));
-
   tft.fillRect(18, PHC_Y + 22, 200, 34, C_CARD);
 
   tft.setFont(&FreeSansBold18pt7b);
@@ -642,7 +625,6 @@ void maskEsquinasBarra() {
   tft.drawPixel(xr, yb - 1, C_CARD);
 }
 
-// =================================================================
 void dibujarValorTemp() {
   tft.fillRect(CT_X + 10, CB_Y + 22, 128, 36, C_CARD);
 
@@ -674,7 +656,6 @@ void dibujarValorTemp() {
   }
 }
 
-// =================================================================
 void dibujarValorHum() {
   tft.fillRect(CH_X + 10, CB_Y + 22, 128, 36, C_CARD);
 
@@ -706,7 +687,6 @@ void dibujarValorHum() {
   }
 }
 
-// =================================================================
 void dibujarTiraReles() {
   dibujarChipRele(8,                   "BOMBA", gBomba);
   dibujarChipRele(8 + REL_W + 4,       "NUTR.", gNutrientes);
@@ -733,7 +713,6 @@ void dibujarChipRele(int x, const char* label, bool activo) {
   tft.print(activo ? "ON" : "OFF");
 }
 
-// =================================================================
 void iconoTermometro(int x, int y) {
   tft.fillRoundRect(x + 3, y + 2, 6, 13, 3, C_NARANJA);
   tft.fillCircle(x + 6, y + 16, 5, C_NARANJA);
@@ -747,7 +726,6 @@ void iconoGota(int x, int y) {
   tft.fillCircle(x + 4, y + 13, 2, C_TEXTO);
 }
 
-// =================================================================
 int estadoPH(float ph) {
   if (ph >= 5.5f && ph <= 6.5f) return 0;
   if (ph >= 5.0f && ph <= 7.0f) return 1;
