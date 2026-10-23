@@ -9,6 +9,19 @@ import {
 const projectId = 'demo-hydrostack-rules-test';
 let testEnv;
 
+const commandEnvelope = (
+  uid,
+  commandId = 'cmd-0001',
+  value = true,
+  issuedAt = Date.now(),
+) => ({
+  commandId,
+  value,
+  issuedAt,
+  ttlMs: 10000,
+  requestedBy: uid,
+});
+
 before(async () => {
   testEnv = await initializeTestEnvironment({
     projectId,
@@ -57,18 +70,6 @@ beforeEach(async () => {
 
     await database.ref('deviceAccess/user-a/DEV-A').set(true);
     await database.ref('deviceAccess/user-b/DEV-B').set(true);
-    await database.ref('dispositivos/DEV-A/comandos').set({
-      luz: false,
-      auxiliar: false,
-      bomba: false,
-      nutrientes: false,
-    });
-    await database.ref('dispositivos/DEV-B/comandos').set({
-      luz: false,
-      auxiliar: false,
-      bomba: false,
-      nutrientes: false,
-    });
   });
 });
 
@@ -86,19 +87,37 @@ test('CASO 2: usuario A no puede leer dispositivo B', async () => {
   await assertFails(db.doc('devices/DEV-B').get());
 });
 
-test('CASO 3: usuario A puede escribir comandos de A', async () => {
+test('CASO 3: usuario A puede crear comando y puntero de A', async () => {
   const db = testEnv.authenticatedContext('user-a').database();
-  await assertSucceeds(db.ref('dispositivos/DEV-A/comandos/bomba').set(true));
+  const id = 'cmd-0001';
+  await assertSucceeds(
+    db.ref(`dispositivos/DEV-A/comandos/bomba/${id}`).set(
+      commandEnvelope('user-a', id),
+    ),
+  );
+  await assertSucceeds(
+    db.ref('dispositivos/DEV-A/commandPointers/bomba').set(id),
+  );
 });
 
-test('CASO 4: usuario A no puede escribir comandos de B', async () => {
+test('CASO 4: usuario A no puede crear comandos de B', async () => {
   const db = testEnv.authenticatedContext('user-a').database();
-  await assertFails(db.ref('dispositivos/DEV-B/comandos/bomba').set(true));
+  const id = 'cmd-0002';
+  await assertFails(
+    db.ref(`dispositivos/DEV-B/comandos/bomba/${id}`).set(
+      commandEnvelope('user-a', id),
+    ),
+  );
 });
 
 test('CASO 5: usuario no autenticado no puede controlar dispositivos', async () => {
   const db = testEnv.unauthenticatedContext().database();
-  await assertFails(db.ref('dispositivos/DEV-A/comandos/luz').set(true));
+  const id = 'cmd-0003';
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/comandos/luz/${id}`).set(
+      commandEnvelope('user-a', id),
+    ),
+  );
 });
 
 test('CASO 6: cliente no puede autoasignarse un deviceId creando ownership', async () => {
@@ -114,6 +133,163 @@ test('CASO 6: cliente no puede autoasignarse un deviceId creando ownership', asy
 test('CASO 7: usuario A no puede cambiar ownerUid de A a B', async () => {
   const db = testEnv.authenticatedContext('user-a').firestore();
   await assertFails(db.doc('devices/DEV-A').update({ ownerUid: 'user-b' }));
+});
+
+test('comando creado es inmutable', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  const id = 'cmd-immutable';
+  const ref = db.ref(`dispositivos/DEV-A/comandos/luz/${id}`);
+  await assertSucceeds(ref.set(commandEnvelope('user-a', id, true)));
+  await assertFails(ref.child('value').set(false));
+  await assertFails(ref.update({ value: false }));
+  await assertFails(ref.remove());
+});
+
+test('puntero no puede referenciar un comando inexistente', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  await assertFails(
+    db.ref('dispositivos/DEV-A/commandPointers/bomba').set('cmd-missing'),
+  );
+});
+
+test('puntero solo puede referenciar una orden del usuario autenticado', async () => {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    const db = context.database();
+    const id = 'cmd-foreign';
+    await db.ref(`dispositivos/DEV-A/comandos/luz/${id}`).set(
+      commandEnvelope('user-b', id),
+    );
+  });
+
+  const db = testEnv.authenticatedContext('user-a').database();
+  await assertFails(
+    db.ref('dispositivos/DEV-A/commandPointers/luz').set('cmd-foreign'),
+  );
+});
+
+test('requestedBy debe coincidir con auth.uid', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  const id = 'cmd-ownerx';
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/comandos/luz/${id}`).set(
+      commandEnvelope('user-b', id),
+    ),
+  );
+});
+
+test('commandId interno debe coincidir con la clave RTDB', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  await assertFails(
+    db.ref('dispositivos/DEV-A/comandos/luz/cmd-path1').set(
+      commandEnvelope('user-a', 'cmd-other1'),
+    ),
+  );
+});
+
+test('commandId fuera del tamaño aceptado es rechazado', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  const shortId = 'short';
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/comandos/luz/${shortId}`).set(
+      commandEnvelope('user-a', shortId),
+    ),
+  );
+});
+
+test('commandId con delimitador UART es rechazado', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  const unsafeId = 'bad|id001';
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/comandos/luz/${unsafeId}`).set(
+      commandEnvelope('user-a', unsafeId),
+    ),
+  );
+});
+
+test('issuedAt futuro es rechazado por reloj servidor', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  const id = 'cmd-future';
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/comandos/luz/${id}`).set(
+      commandEnvelope('user-a', id, true, Date.now() + 60000),
+    ),
+  );
+});
+
+test('issuedAt demasiado antiguo es rechazado', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  const id = 'cmd-old001';
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/comandos/luz/${id}`).set(
+      commandEnvelope('user-a', id, true, Date.now() - 60000),
+    ),
+  );
+});
+
+test('TTL fuera del rango permitido es rechazado', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  const id = 'cmd-ttl001';
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/comandos/luz/${id}`).set({
+      ...commandEnvelope('user-a', id),
+      ttlMs: 60000,
+    }),
+  );
+});
+
+test('bomba y nutrientes solo aceptan value=true', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  const pumpId = 'cmd-pump01';
+  const nutrientId = 'cmd-nut001';
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/comandos/bomba/${pumpId}`).set(
+      commandEnvelope('user-a', pumpId, false),
+    ),
+  );
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/comandos/nutrientes/${nutrientId}`).set(
+      commandEnvelope('user-a', nutrientId, false),
+    ),
+  );
+});
+
+test('campos extra en el sobre de comando son rechazados', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  const id = 'cmd-extra1';
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/comandos/luz/${id}`).set({
+      ...commandEnvelope('user-a', id),
+      admin: true,
+    }),
+  );
+});
+
+test('cliente no puede crear su propia proyección deviceAccess', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  await assertFails(db.ref('deviceAccess/user-a/DEV-X').set(true));
+});
+
+test('cliente no puede escribir un actuador fuera del contrato', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  const id = 'cmd-reboot';
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/comandos/reiniciar/${id}`).set(
+      commandEnvelope('user-a', id),
+    ),
+  );
+});
+
+test('cliente no puede escribir commandAcks', async () => {
+  const db = testEnv.authenticatedContext('user-a').database();
+  const id = 'cmd-ack001';
+  await assertFails(
+    db.ref(`dispositivos/DEV-A/commandAcks/bomba/${id}`).set({
+      commandId: id,
+      status: 'APPLIED',
+      code: 'OK',
+      at: Date.now(),
+    }),
+  );
 });
 
 test('perfil no puede apuntar deviceId a un dispositivo ajeno', async () => {
@@ -132,21 +308,6 @@ test('perfil puede guardar como preferencia un deviceId realmente propio', async
     email: 'a@example.test',
   }));
   await assertSucceeds(db.doc('usuarios/user-a').update({ deviceId: 'DEV-A' }));
-});
-
-test('cliente no puede crear su propia proyección deviceAccess', async () => {
-  const db = testEnv.authenticatedContext('user-a').database();
-  await assertFails(db.ref('deviceAccess/user-a/DEV-X').set(true));
-});
-
-test('cliente no puede escribir comandos fuera del contrato', async () => {
-  const db = testEnv.authenticatedContext('user-a').database();
-  await assertFails(db.ref('dispositivos/DEV-A/comandos/reiniciar').set(true));
-});
-
-test('cliente no puede borrar un campo de comando', async () => {
-  const db = testEnv.authenticatedContext('user-a').database();
-  await assertFails(db.ref('dispositivos/DEV-A/comandos/bomba').remove());
 });
 
 test('documento con deviceId interno distinto de la ruta no es autorizable', async () => {
