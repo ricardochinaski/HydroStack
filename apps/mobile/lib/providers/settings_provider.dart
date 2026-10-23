@@ -12,12 +12,22 @@ class SettingsState {
   final AppUnidades unidades;
   final String huertaNombre;
   final int towerCapacity; // 12 (mini) o 24 (normal)
-  /// true = leer telemetría desde Firebase RTDB (NodeMCU real)
-  /// false = usar simulador local
+
+  /// true = intentar leer telemetría desde hardware/RTDB.
+  /// false = usar simulador local.
   final bool usarHardware;
 
-  /// ID del dispositivo físico vinculado (impreso en la torre, ej. "HS-001").
-  final String deviceId;
+  /// Selector local del dispositivo real preferido. No demuestra ownership.
+  /// El acceso efectivo siempre debe resolverse mediante authorizedDeviceProvider.
+  final String? preferredDeviceId;
+
+  /// ID manual reservado para laboratorio/desarrollo. `HS-001` se conserva
+  /// aquí por compatibilidad con el firmware actual, nunca como ownership real.
+  final String developmentDeviceId;
+
+  /// Habilita explícitamente el bypass de selección real para laboratorio.
+  /// Debe permanecer false por defecto.
+  final bool useDevelopmentDevice;
 
   const SettingsState({
     this.themeMode = ThemeMode.light,
@@ -26,7 +36,9 @@ class SettingsState {
     this.huertaNombre = 'Mi Huerta Viva',
     this.towerCapacity = 24,
     this.usarHardware = false,
-    this.deviceId = 'HS-001',
+    this.preferredDeviceId,
+    this.developmentDeviceId = 'HS-001',
+    this.useDevelopmentDevice = false,
   });
 
   SettingsState copyWith({
@@ -36,7 +48,10 @@ class SettingsState {
     String? huertaNombre,
     int? towerCapacity,
     bool? usarHardware,
-    String? deviceId,
+    String? preferredDeviceId,
+    bool clearPreferredDeviceId = false,
+    String? developmentDeviceId,
+    bool? useDevelopmentDevice,
   }) {
     return SettingsState(
       themeMode: themeMode ?? this.themeMode,
@@ -45,7 +60,11 @@ class SettingsState {
       huertaNombre: huertaNombre ?? this.huertaNombre,
       towerCapacity: towerCapacity ?? this.towerCapacity,
       usarHardware: usarHardware ?? this.usarHardware,
-      deviceId: deviceId ?? this.deviceId,
+      preferredDeviceId: clearPreferredDeviceId
+          ? null
+          : preferredDeviceId ?? this.preferredDeviceId,
+      developmentDeviceId: developmentDeviceId ?? this.developmentDeviceId,
+      useDevelopmentDevice: useDevelopmentDevice ?? this.useDevelopmentDevice,
     );
   }
 
@@ -58,28 +77,24 @@ class SettingsState {
 
   bool get isImperial => unidades == AppUnidades.imperial;
 
-  /// Formats a Celsius value, converting to Fahrenheit when unidades == imperial.
   String formatTemp(double celsius, {int decimals = 0}) {
     if (!isImperial) return '${celsius.toStringAsFixed(decimals)}°C';
     final f = celsius * 9 / 5 + 32;
     return '${f.toStringAsFixed(decimals)}°F';
   }
 
-  /// Formats a liters value, converting to US gallons when unidades == imperial.
   String formatVolume(double liters, {int decimals = 1}) {
     if (!isImperial) return '${liters.toStringAsFixed(decimals)}L';
     final gal = liters * 0.264172;
     return '${gal.toStringAsFixed(decimals)}gal';
   }
 
-  /// Formats a centimeters value, converting to inches when unidades == imperial.
   String formatLength(double cm, {int decimals = 0}) {
     if (!isImperial) return '${cm.toStringAsFixed(decimals)}cm';
     final inches = cm / 2.54;
     return '${inches.toStringAsFixed(decimals)}in';
   }
 
-  /// Formats a meters value, converting to feet when unidades == imperial.
   String formatMeters(double meters, {int decimals = 2}) {
     if (!isImperial) return '${meters.toStringAsFixed(decimals)}m';
     final feet = meters * 3.28084;
@@ -101,10 +116,18 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final nombre = await _storage.getString('huerta_nombre');
     final tower = await _storage.getString('tower_capacity');
     final hardware = await _storage.getString('usar_hardware');
-    final deviceId = await _storage.getString('device_id');
+    final preferredDeviceId = await _storage.getString('preferred_device_id');
+    final developmentDeviceId = await _storage.getString('development_device_id');
+    final useDevelopmentDevice = await _storage.getString('use_development_device');
+
+    // Migración conservadora: el antiguo `device_id` se trata únicamente como
+    // ID de desarrollo. Nunca se promueve automáticamente a ownership real.
+    final legacyDeviceId = await _storage.getString('device_id');
 
     state = state.copyWith(
-      deviceId: deviceId ?? state.deviceId,
+      preferredDeviceId: preferredDeviceId,
+      developmentDeviceId: developmentDeviceId ?? legacyDeviceId ?? state.developmentDeviceId,
+      useDevelopmentDevice: useDevelopmentDevice == '1',
       themeMode: switch (theme) {
         'dark' => ThemeMode.dark,
         'system' => ThemeMode.system,
@@ -148,10 +171,31 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await _storage.setString('usar_hardware', value ? '1' : '0');
   }
 
-  Future<void> setDeviceId(String id) async {
-    state = state.copyWith(deviceId: id);
-    await _storage.setString('device_id', id);
+  Future<void> setPreferredDeviceId(String? id) async {
+    final normalized = id?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      state = state.copyWith(clearPreferredDeviceId: true);
+      await _storage.remove('preferred_device_id');
+      return;
+    }
+    state = state.copyWith(preferredDeviceId: normalized);
+    await _storage.setString('preferred_device_id', normalized);
   }
+
+  Future<void> setDevelopmentDeviceId(String id) async {
+    final normalized = id.trim().toUpperCase();
+    if (normalized.isEmpty) return;
+    state = state.copyWith(developmentDeviceId: normalized);
+    await _storage.setString('development_device_id', normalized);
+  }
+
+  Future<void> setUseDevelopmentDevice(bool value) async {
+    state = state.copyWith(useDevelopmentDevice: value);
+    await _storage.setString('use_development_device', value ? '1' : '0');
+  }
+
+  @Deprecated('Use setDevelopmentDeviceId; manual IDs are development-only.')
+  Future<void> setDeviceId(String id) => setDevelopmentDeviceId(id);
 
   Future<void> resetAll() async {
     await _storage.remove('theme_mode');
@@ -159,6 +203,11 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await _storage.remove('unidades');
     await _storage.remove('huerta_nombre');
     await _storage.remove('tower_capacity');
+    await _storage.remove('usar_hardware');
+    await _storage.remove('preferred_device_id');
+    await _storage.remove('development_device_id');
+    await _storage.remove('use_development_device');
+    await _storage.remove('device_id'); // clave legacy
     state = const SettingsState();
   }
 }

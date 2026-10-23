@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsDevice(deviceId) {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/devices/$(deviceId))
+        && firestore.get(/databases/(default)/documents/devices/$(deviceId)).data.ownerUid == request.auth.uid;
+    }
+
+    // Future canonical location for device-owned media.
+    match /devices/{deviceId}/{allPaths=**} {
+      allow read: if ownsDevice(deviceId);
+      allow write: if false;
+    }
+
+    // The current camera firmware still writes under `capturas/`. Keep that
+    // legacy location closed to clients until firmware authentication and the
+    // storage contract are migrated in a later phase.
+    match /capturas/{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

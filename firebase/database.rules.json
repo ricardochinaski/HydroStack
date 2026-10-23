@@ -1,0 +1,50 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "deviceAccess": {
+      "$uid": {
+        "$deviceId": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": false,
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    },
+
+    "dispositivos": {
+      "$deviceId": {
+        ".read": "auth != null && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+
+        "telemetria": {
+          ".write": false
+        },
+        "info": {
+          ".write": false
+        },
+        "camara": {
+          ".write": false
+        },
+        "comandos": {
+          "luz": {
+            ".write": "auth != null && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+            ".validate": "newData.isBoolean()"
+          },
+          "auxiliar": {
+            ".write": "auth != null && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+            ".validate": "newData.isBoolean()"
+          },
+          "bomba": {
+            ".write": "auth != null && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+            ".validate": "newData.isBoolean()"
+          },
+          "nutrientes": {
+            ".write": "auth != null && newData.exists() && root.child('deviceAccess').child(auth.uid).child($deviceId).val() === true",
+            ".validate": "newData.isBoolean()"
+          }
+        }
+      }
+    }
+  }
+}
