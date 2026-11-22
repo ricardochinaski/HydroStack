@@ -54,6 +54,10 @@ jobs:
           gradle_version = wrapper.read_text()
           assert "gradle-9.1.0-all.zip" in gradle_version, "Unexpected Gradle wrapper version"
           wrapper.write_text(gradle_version.replace("gradle-9.1.0-all.zip", "gradle-9.3.1-all.zip"))
+          settings = Path("apps/mobile/android/settings.gradle.kts")
+          plugins = settings.read_text()
+          assert 'id("com.android.application") version "9.0.1"' in plugins, "Unexpected AGP version"
+          settings.write_text(plugins.replace('id("com.android.application") version "9.0.1"', 'id("com.android.application") version "9.1.1"'))
           PY
 
       - name: Fetch dependencies
