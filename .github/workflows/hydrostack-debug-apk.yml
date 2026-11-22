@@ -50,6 +50,10 @@ jobs:
           content = content.replace(plugin, '// Offline CI build: no Google Services configuration', 1)
           content = content.replace(appid, 'applicationId = "com.aselec.hidrosmart.preview"', 1)
           gradle.write_text(content)
+          wrapper = Path("apps/mobile/android/gradle/wrapper/gradle-wrapper.properties")
+          gradle_version = wrapper.read_text()
+          assert "gradle-9.1.0-all.zip" in gradle_version, "Unexpected Gradle wrapper version"
+          wrapper.write_text(gradle_version.replace("gradle-9.1.0-all.zip", "gradle-9.3.1-all.zip"))
           PY
 
       - name: Fetch dependencies
